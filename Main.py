@@ -1,6 +1,8 @@
 import os
+from tkinter import messagebox
 LOCK_FILE = os.path.join(os.path.dirname(__file__), 'lock_file')
 if os.path.exists(LOCK_FILE):
+    messagebox.showerror("Error", "True Music is already running!")
     import sys
     sys.exit(0)
 else:
@@ -11,7 +13,6 @@ import threading
 from tkinter import *
 import secrets
 from tkinter import filedialog
-from tkinter import messagebox
 from tkinter import ttk
 import pyglet
 import pystray
@@ -36,6 +37,7 @@ dir_musics = []
 number_of_files = 0
 remember_flag = False
 secretsGenerator = secrets.SystemRandom()
+
 
 
 # Functions
