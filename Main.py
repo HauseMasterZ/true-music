@@ -175,7 +175,8 @@ auto_play_flag = True
 repeat_flag = False
 first_flag = True
 pyglet.options['audio'] = ('openal', 'pulse', 'xaudio2', 'directsound', 'silent')
-pyglet.options['video'] = ('directx', 'silent')
+
+# pyglet.options['video'] = ('directx', 'silent')
 
 player = pyglet.media.Player()
 pyglet.options['graphics'] = {'backend': 'gl'}
@@ -390,9 +391,12 @@ def openFilePicker():
     Directory += "/"
     if Directory != '/':
         load_music_thread = threading.Thread(target=loadMusicThread)
+        load_music_thread.daemon = True
         load_music_thread.start()
     else:
         directory_box_flag = False
+        if not player.playing:
+            now_playing.configure(text='Now Playing: ')
 
 # Search File In Directory
 def loadMusicThread():
@@ -422,6 +426,7 @@ def loadMusicThread():
             file_names.clear()
             return
         load_thread = threading.Thread(target=loadDateModified, args=(tmp[::], file_names[::], number_of_files, {name:ind for ind, name in enumerate(dir_musics)}))
+        load_thread.daemon = True
         load_thread.start()
         dir_musics.extend(tmp)
         number_of_files += tmp_num
@@ -455,8 +460,6 @@ def merge_sorted_lists(list1, list2):
 
     return merged_list
 
-
-
 def get_unix_time_from_tuple(filename):
     return int(filename.split('unixStart')[-1].split('searchSelectIndex')[0])
 
@@ -473,7 +476,6 @@ def date_merge_sorted_lists(list1, list2):
     merged_list += list1[i:]
     merged_list += list2[j:]
     return merged_list
-
 
 # date modified sort
 def loadDateModified(tmp, date_file_names, number_of_files, dir_dict):
@@ -751,7 +753,14 @@ def seek_tap(event):
 
 # key press
 def on_key_press(event):
-    if root.focus_get() != search_box:
+    global hotkey_flag
+    if hotkey_flag and event.keysym == "XF86AudioPlay":
+        playBtnAction()
+    elif hotkey_flag and event.keysym == "XF86AudioPrev":
+        previousBtnAction()
+    elif hotkey_flag and event.keysym == "XF86AudioNext":
+        forwardBtnAction()
+    elif root.focus_get() != search_box:
         if event.keysym == "Right":
             player.seek(player.time)
             def seekAgain():
@@ -766,15 +775,6 @@ def on_key_press(event):
             drop_down.focus()
         elif event.state & 1 and event.keysym.lower() == "n":
             forwardBtnAction()
-    # if event.keysym == "XF86AudioPlay":
-    #     playBtnAction()
-    # elif event.keysym == "XF86AudioPrev":
-    #     previousBtnAction()
-    # elif event.keysym == "XF86AudioNext":
-    #     forwardBtnAction()
-    # elif event.keysym == "XF86AudioMute":
-    #     player.play()
-    #     playBtnAction()
 
 
 
@@ -790,6 +790,7 @@ def update_seekbar():
         if current_time > total_time:
             playBtnAction()
             on_eos = threading.Thread(target=playerEnd)
+            on_eos.daemon = True
             on_eos.start()
             return
         mins, secs = divmod(int(current_time), 60)
@@ -871,6 +872,7 @@ def directoryBoxThread():
     global directory_box_flag
     if not directory_box_flag:
         directory_thread = threading.Thread(target=openFilePicker)
+        directory_thread.daemon = True
         directory_thread.start()
 
 
@@ -925,6 +927,7 @@ def refreshThreadAction():
     global directory_box_flag
     if not directory_box_flag:
         refresh_thread = threading.Thread(target=refreshBtnAction)
+        refresh_thread.daemon = True
         refresh_thread.start()
 
 def set_focus(event):
@@ -959,6 +962,7 @@ def readData():
                 if on_close:
                     return
                 play_thread = threading.Thread(target=threadAction)
+                play_thread.daemon = True
                 play_thread.start() 
                 file_names = file_names[1::]   
                 drop_down['values'] = file_names
@@ -978,6 +982,7 @@ def readData():
             root.focus_force()
 
 read_data_thread = threading.Thread(target=readData)
+read_data_thread.daemon = True
 
 # Style
 style = ttk.Style()
@@ -1184,8 +1189,10 @@ def hotkeys():
     else:
         hotkey_flag = True
         hotkey_btn.configure(text="Hotkeys: On")
-        if not mediaKeysThread.is_alive():
-            mediaKeysThread.start()
+        mediaKeysThread = threading.Thread(target=checkMediaKeys)
+        mediaKeysThread.daemon = True
+        # if not mediaKeysThread.is_alive():
+        mediaKeysThread.start()
 
 hotkey_btn = Button(root, text="Hotkeys: Off",
                    command=hotkeys, font=("Corbel", 10))
@@ -1328,6 +1335,7 @@ def checkMediaKeys():
     def on_press(key):
         try:
             if not hotkey_flag:
+                listener.stop()
                 return
             if key == keyboard.Key.media_play_pause:
                 playBtnAction()
@@ -1335,14 +1343,11 @@ def checkMediaKeys():
                 previousBtnAction()
             elif key == keyboard.Key.media_next:
                 forwardBtnAction()
-            elif key == keyboard.Key.media_volume_mute:
-                player.play()
-                playBtnAction()
         except AttributeError:
             pass
     with keyboard.Listener(on_press=on_press) as listener:
             listener.join()
-
+    return 
 
 
 def onMinimize(event):
@@ -1368,8 +1373,7 @@ SystemTrayThread = threading.Thread(target=pystrayTray)
 SystemTrayThread.daemon = True
 SystemTrayThread.start()
 
-mediaKeysThread = threading.Thread(target=checkMediaKeys)
-mediaKeysThread.daemon = True
+
 
 root.bind("<KeyPress>", on_key_press)
 root.bind("<space>", playBtnAction)
