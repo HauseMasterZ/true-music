@@ -133,7 +133,6 @@ def changeTheme():
         repeat_btn.configure(background='White', foreground='Black', activebackground='White')
         selectDirectory.configure(background='White', foreground='Black',activebackground='White')
         trueShuffle_btn.configure(background='White', foreground='Black' if not shuffle_flag else "#2dd128",activebackground='White')
-
     else:
         date_modified_btn.configure(background='#121212', foreground='White')
         refresh_btn.configure(background='#121212', foreground='White')
@@ -159,7 +158,6 @@ def changeTheme():
                                activebackground='#121212', activeforeground='Grey')
         clear_btn.configure(background='#121212', foreground='White',
                             activebackground='#121212', activeforeground='Grey')
-
         style.configure("myStyle.Vertical.TScale", background='#121212')
         now_playing.configure(background='#121212', foreground='White')
         seek_of_music.configure(background='#121212', foreground='White')
@@ -177,8 +175,6 @@ auto_play_flag = True
 repeat_flag = False
 first_flag = True
 pyglet.options['audio'] = ('openal', 'pulse', 'xaudio2', 'directsound', 'silent')
-
-# pyglet.options['video'] = ('directx', 'silent')
 
 player = pyglet.media.Player()
 pyglet.options['graphics'] = {'backend': 'gl'}
@@ -283,15 +279,11 @@ def alwaysOnTop():
     if always_on_top_flag:
         root.attributes("-topmost", False)
         always_on_top_flag = False
-        # always_on_top_btn.configure(
-        #     text="Always On Top: Disabled", background='#fc625a', activebackground='#fc625a')
         always_on_top_btn.configure(
             text="Always On Top: Disabled", relief=RIDGE)
     else:
         root.attributes("-topmost", True)
         always_on_top_flag = True
-        # always_on_top_btn.configure(
-        #     text="Always On Top: Enabled", background='#2dcd44', activebackground='#2dcd44')
         always_on_top_btn.configure(
             text="Always On Top: Enabled", relief=SUNKEN)
 
@@ -309,16 +301,12 @@ def trueShuffle():
         shuffle_flag = False
         menu_items[1] = pystray.MenuItem('True Shuffle: Off', on_click)
         icon.menu = pystray.Menu(*menu_items)
-        # trueShuffle_btn.configure(
-        #     text='True Shuffle: Off', background='red', activebackground='#941212')
         trueShuffle_btn.configure(
             text='True Shuffle: Off', relief=RIDGE, foreground='White' if theme_btn.cget('text') == 'Theme: Dark' else 'Black')
     else:
         shuffle_flag = True
         menu_items[1] = pystray.MenuItem('True Shuffle: On', on_click)
         icon.menu = pystray.Menu(*menu_items)
-        # trueShuffle_btn.configure(
-        #     text='True Shuffle: On', background='purple', activebackground='#610673')
         trueShuffle_btn.configure(
             text='True Shuffle: On', relief=SUNKEN, foreground='#2dd128')
 
@@ -329,30 +317,23 @@ def autoRepeat():
         repeat_flag = False
         menu_items[2] = pystray.MenuItem('Repeat: Off', on_click)
         icon.menu = pystray.Menu(*menu_items)
-        # repeat_btn.configure(text='Repeat: Disabled',
-        #                      background='#fc625a', activebackground='#fc625a')
         repeat_btn.configure(text='Repeat: Disabled',
                              relief=RIDGE)
     else:
         repeat_flag = True
         menu_items[2] = pystray.MenuItem('Repeat: On', on_click)
         icon.menu = pystray.Menu(*menu_items)
-        # repeat_btn.configure(text='Repeat: Enabled',
-        #                      background='#2dcd44', activebackground='#2dcd44')
         repeat_btn.configure(text='Repeat: Enabled',
                              relief=SUNKEN)
         if auto_play_flag:
             auto_play_flag = False
             menu_items[3] = pystray.MenuItem('Autoplay: Off', on_click)
             icon.menu = pystray.Menu(*menu_items)
-            # autoplay_btn.config(text="Autoplay: Disabled",
-            #                     background='#fc625a', activebackground='#fc625a')
             autoplay_btn.config(text="Autoplay: Disabled",
                                 relief=RIDGE)
 
 # Audio Video
 audio_set = ('.m4a', '.mp3', '.aac', '.flac', '.wav', '.ogg', '.wma')
-# audio_set = {"m4a", "mp3", "aac", "flac", "wav", "ogg", "wma"}
 # video_set = {"webm", "flv", "mp4", "mov", "wmv"}
 
 # Function to get all the files in the directory including the subdirectories
@@ -380,67 +361,55 @@ def get_all_files(folder_path):
 
 file_names = ('', )
 initial_drop_values = ('', )
+
 # File Picker Open
 def openFilePicker():
-    global dir_musics, Directory, clear_flag, directory_box_flag
+    global dir_musics, Directory, clear_flag, directory_box_flag, first_flag
     directory_box_flag = True
-    if not player.playing:
+    if first_flag:
         now_playing.configure(text='Now Playing: Please Wait...')
     if clear_flag:
         dir_musics.clear()
     clear_flag = False
     Directory = filedialog.askdirectory(title="Select Directory")
     Directory += "/"
-    if Directory != '/':
+    if Directory != '/' and Directory in directory_box.get("1.0", "end-1c"):
+        messagebox.showwarning('Existing Directory', 'Directory Already Exists. Please Select Another Directory.')
+    elif Directory != '/':
         load_music_thread = threading.Thread(target=loadMusicThread)
         load_music_thread.daemon = True
         load_music_thread.start()
-    else:
         directory_box_flag = False
-        if not player.playing:
-            now_playing.configure(text='Now Playing: ')
+        return
+    directory_box_flag = False
+    if first_flag:
+        now_playing.configure(text='Now Playing: ')
 
 # Search File In Directory
 def loadMusicThread():
-    global dir_musics, number_of_files, Directory, directory_box_flag
-    if Directory != '/' and Directory not in directory_box.get("1.0", "end-1c"):
-        prev_path = directory_box.get("1.0", "end-1c")
-        directory_box.config(state=NORMAL)
-        directory_box.insert(END, Directory + ', ')
-        directory_box.config(state=DISABLED)
-        tmp = directory_box.index("end-1c").split(".")
-        if float(tmp[1])*12.4181818182 > (root.winfo_width()):
-            directory_box.config(height=2)
-            refresh_btn.place(rely=0.41)
-        tmp.clear()
-        Directory.replace("/", "//")
-        tmp, file_names, tmp_num = get_all_files(Directory)
-        if file_names == [] or tmp_num == 0 or tmp_num == -1:
-            messagebox.showerror("Error", "No Music Files Found In Directory") if tmp_num == 0 else messagebox.showerror('Error', 'Permission Denied To Access Directory')
-            directory_box_flag = False
-            directory_box.config(state=NORMAL)
-            directory_box.delete("1.0", "end-1c")
-            directory_box.insert(END, prev_path)
-            directory_box.config(state=DISABLED)
-            if not player.playing:
-                now_playing.configure(text='Now Playing: ')
-            tmp.clear()
-            file_names.clear()
-            return
-        load_thread = threading.Thread(target=loadDateModified, args=(tmp[::], file_names[::], number_of_files, {name:ind for ind, name in enumerate(dir_musics)}))
-        load_thread.daemon = True
-        load_thread.start()
-        dir_musics.extend(tmp)
-        number_of_files += tmp_num
-        tmp.clear()
-        file_names.clear()
-        directory_box_flag = False
-        if not player.playing:
-            threadAction()
-    else:
-        if not player.playing:
-            now_playing.configure(text='Now Playing: ')
-        directory_box_flag = False
+    global number_of_files, Directory
+    tmp = directory_box.index("end-1c").split(".")
+    if float(tmp[1])*12.4181818182 > (root.winfo_width()):
+        directory_box.config(height=2)
+        refresh_btn.place(rely=0.41)
+    Directory.replace("/", "//")
+    tmp, file_names, tmp_num = get_all_files(Directory)
+    if file_names == [] or tmp_num == 0 or tmp_num == -1:
+        messagebox.showerror("Error", "No Music Files Found In Directory") if tmp_num == 0 else messagebox.showerror('Error', 'Permission Denied To Access Directory')
+        return
+    directory_box.config(state=NORMAL)
+    directory_box.insert(END, Directory + ', ')
+    directory_box.config(state=DISABLED)
+    load_thread = threading.Thread(target=loadDateModified, args=(tmp[::], file_names[::], number_of_files))
+    load_thread.daemon = True
+    load_thread.start()
+    dir_musics.extend(tmp)
+    number_of_files += tmp_num
+    tmp.clear()
+    file_names.clear()
+    if music_bar.state()[0] == 'disabled':
+        threadAction()
+
 
 def merge_sorted_lists(list1, list2):
     merged_list = []
@@ -480,7 +449,7 @@ def date_merge_sorted_lists(list1, list2):
     return merged_list
 
 # date modified sort
-def loadDateModified(tmp, date_file_names, number_of_files, dir_dict):
+def loadDateModified(tmp, date_file_names, number_of_files):
     global file_names, initial_drop_values, on_close, date_modified_flag
     res = ()
     for x, i in enumerate(date_file_names):
@@ -512,7 +481,7 @@ clear_flag = False
 
 # Clear Directory
 def clearDirectory():
-    global clear_flag, number_of_files, Directory, file_names, initial_drop_values, date_modified_flag, remember_flag
+    global clear_flag, number_of_files, Directory, file_names, initial_drop_values, date_modified_flag, remember_flag, first_flag
     search_box.delete(0, END)
     search_box.insert(0, 'Press Enter To Search')
     search_box.configure(foreground='Gray')
@@ -573,32 +542,6 @@ def updateSize(event):
         font=("Corbel", (root.winfo_width() + root.winfo_height()) // 50))
     now_playing.configure(font=("Aerial", (root.winfo_width() +
                                            root.winfo_height()) // 100)) 
-    # Resize the window here
-    # always_on_top_btn.configure(font=("Corbel", (root.winfo_width() + root.winfo_height()) // 100))
-    # autoplay_btn.configure(font=("Corbel", (root.winfo_width() + root.winfo_height()) // 100))
-    # repeat_btn.configure(font=("Corbel", (root.winfo_width() + root.winfo_height()) // 100))
-    # theme_btn.configure(font=("Corbel", (root.winfo_width() + root.winfo_height()) // 100))
-    # remember_btn.configure(font=("Corbel", (root.winfo_width() + root.winfo_height()) // 100))
-    # refresh_btn.configure(font=("Corbel", (root.winfo_width() + root.winfo_height()) // 100))
-    # search_box.configure(font=("Corbel", (root.winfo_width() + root.winfo_height()) // 100))
-    # directory_box.configure(font=("Corbel", (root.winfo_width() + root.winfo_height()) // 100))
-    # drop_down.configure(font=("Corbel", (root.winfo_width() + root.winfo_height()) // 100))
-    # selectDirectory.configure(font=("Corbel", (root.winfo_width() + root.winfo_height()) // 100))
-    # trueShuffle_btn.configure(font=("Corbel", (root.winfo_width() + root.winfo_height()) // 100))
-    # clear_btn.configure(font=("Corbel", (root.winfo_width() + root.winfo_height()) // 100))
-    # date_modified_btn.configure(font=("Corbel", (root.winfo_width() + root.winfo_height()) // 100))
-    # seek_of_music.configure(font=("Corbel", (root.winfo_width() + root.winfo_height()) // 100))
-    # length_of_music.configure(font=("Corbel", (root.winfo_width() + root.winfo_height()) // 100))
-    # arrow_lbl.configure(font=("Corbel", (root.winfo_width() + root.winfo_height()) // 100))
-
-        # if root.winfo_width() < 300:
-    #     always_on_top_btn.configure(width=root.winfo_width()//18)
-    #     autoplay_btn.configure(width=root.winfo_width()//18)
-    #     theme_btn.configure(width=root.winfo_width()//22)
-    # else:
-    #     always_on_top_btn.configure(width=18)
-    #     autoplay_btn.configure(width=18)
-    #     theme_btn.configure(width=14)
 
 
 store_path_thread = threading.Thread(target=storePath)
@@ -617,8 +560,8 @@ def playBtnAction(event=None):
             'text') == 'Theme: Dark' else play_pause_btn.configure(image=play_image_inv)
     else:
         if player.volume <= 0:
-            player.volume = 0.5
-            volume_bar.set(50)
+            player.volume = 1.0
+            volume_bar.set(100)
             volume_val.configure(text='50')
         music_bar.state(['!disabled'])
         player.play()
@@ -653,36 +596,25 @@ def playerEnd():
         player.seek(0)
         threadAction()
 
+
 date_modified_cnt = 0
 
 
 # Play Music
 def threadAction(prev_flag=False, search_file=None):
-    global Directory, first_flag, length_of_music, file_name, pause_image, clear_flag, corrupt_flag, date_modified_flag, playing_index, date_modified_cnt, number_of_files
+    global first_flag, length_of_music, file_name, clear_flag, corrupt_flag, date_modified_flag, playing_index, date_modified_cnt, number_of_files
+    player.delete()
     if clear_flag:
         music_bar.set(0)
         player.pause()
         play_pause_btn.configure(image=play_image) if theme_btn.cget(
             'text') == 'Theme: Dark' else play_pause_btn.configure(image=play_image_inv)
-        player.delete()
         music_bar.state(['disabled'])
         seek_of_music.configure(text='00:00')
         now_playing.configure(text='Now playing: ')
         length_of_music.configure(text='00:00')
         dir_musics.clear()
         return
-    if not dir_musics:
-        messagebox.showwarning('No Media Files Found',
-                               'Please Enter Directory With Media Files')
-        directory_box.config(state=NORMAL)
-        directory_box.delete("1.0", END)
-        directory_box.config(state=DISABLED)
-        return
-    if Directory == "":
-        messagebox.showwarning('Invalid Directory',
-                               'Please Enter Valid Folder Directory')
-        return
-    player.delete()
     clear_flag = False
     if first_flag:
         music_bar.state(['!disabled'])
@@ -721,24 +653,31 @@ def threadAction(prev_flag=False, search_file=None):
         if corrupt_flag:
             music_bar.state(['disabled'])
             return
-    music_bar.state(['!disabled'])
+    playBtnAction()
     track_length = int(player.source.duration) + 2
     now_playing.configure(text=f'Now playing: {file_name[:75]}')
-    play_pause_btn.configure(image=pause_image) if theme_btn.cget(
-        'text') == 'Theme: Dark' else play_pause_btn.configure(image=pause_image_inv)
     mins = track_length//60
     secs = (track_length % 60)
     length_of_music.configure(text=f'{mins}:{secs:02d}')
-    player.play()
     update_seekbar()
+
+def muteBtnAction(event=None):
+    global play_image, play_image_inv
+    player.volume = 0.0
+    volume_val.configure(text='0')
+    volume_bar.set(100)
+    player.pause()
+    music_bar.state(['disabled'])
+    play_pause_btn.configure(image=play_image) if theme_btn.cget(
+        'text') == 'Theme: Dark' else play_pause_btn.configure(image=play_image_inv)
 
 # Volume button action
 def on_volume_change(event):
     player.volume = (100 - event.y) / 100
     volume_bar.set((event.y/volume_bar.winfo_height()) * 100)
     volume_val.configure(text=int(100 - volume_bar.get()))
-    if player.volume <= 0:
-        playBtnAction()
+    if player.volume == 0.0:
+        muteBtnAction()
 
 # Seekbar update
 def seek_tap(event):
@@ -755,13 +694,14 @@ def seek_tap(event):
 
 # key press
 def on_key_press(event):
-    global hotkey_flag
-    if hotkey_flag and event.keysym == "XF86AudioPlay":
+    if event.keysym == "XF86AudioPlay":
         playBtnAction()
-    elif hotkey_flag and event.keysym == "XF86AudioPrev":
+    elif event.keysym == "XF86AudioPrev":
         previousBtnAction()
-    elif hotkey_flag and event.keysym == "XF86AudioNext":
+    elif event.keysym == "XF86AudioNext":
         forwardBtnAction()
+    elif event.keysym == "XF86AudioMute":
+        muteBtnAction()
     elif root.focus_get() != search_box:
         if event.keysym == "Right":
             player.seek(player.time)
@@ -1098,8 +1038,6 @@ directory_box_flag = False
 selectDirectory = Button(root, text="Select Music Folder", command=directoryBoxThread,
                          width=root.winfo_width()//50, padx=6, wraplength=root.winfo_width()//6, font=("Corbel", 10))
 
-# selectDirectory.configure(background='#1d72b0', foreground='white',
-#                           activebackground='#065a97', relief="sunken", borderwidth=0)
 
 selectDirectory.configure(background='#121212', foreground='White',relief="ridge", borderwidth=0, activeforeground='grey', activebackground='#121212')
 
@@ -1141,6 +1079,7 @@ volume_image_inv = PhotoImage(file=os.path.join(
 volume_icon = Label(root, image=volume_image)
 volume_icon.place(relx=0.91, rely=0.18, anchor=W)
 volume_icon.configure(borderwidth=0, background="#121212")
+volume_icon.bind('<Button-1>', muteBtnAction)
 
 volume_val = Label(root, text='100')
 volume_val.place(relx=0.95, rely=0.18, anchor=W)
@@ -1193,7 +1132,6 @@ def hotkeys():
         hotkey_btn.configure(text="Hotkeys: On")
         mediaKeysThread = threading.Thread(target=checkMediaKeys)
         mediaKeysThread.daemon = True
-        # if not mediaKeysThread.is_alive():
         mediaKeysThread.start()
 
 hotkey_btn = Button(root, text="Hotkeys: Off",
@@ -1247,8 +1185,6 @@ previous_btn.place(relx=0.05, rely=0.2, anchor=CENTER)
 
 trueShuffle_btn = Button(root, text="True Shuffle: On",
                          command=trueShuffle, padx=6, pady=6, font=("Corbel", 10))
-# trueShuffle_btn.configure(background='purple', foreground='white',
-#                           activebackground='#610673', relief="sunken", borderwidth=0)
 trueShuffle_btn.configure(background='#121212',relief="groove", borderwidth=0, activeforeground='grey', activebackground='#121212', foreground='#2dd128')
 def on_enter_shuffle(e):
     trueShuffle_btn.configure(borderwidth=1)
@@ -1313,8 +1249,6 @@ def pystrayTray():
     onClosing()
     return
 
-
-
 is_windows = os.name == 'nt'
 
 try:
@@ -1345,6 +1279,8 @@ def checkMediaKeys():
                 previousBtnAction()
             elif key == keyboard.Key.media_next:
                 forwardBtnAction()
+            elif key == keyboard.Key.media_volume_mute:
+                muteBtnAction()
         except AttributeError:
             pass
     with keyboard.Listener(on_press=on_press) as listener:
