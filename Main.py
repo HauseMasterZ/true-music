@@ -663,9 +663,9 @@ def threadAction(prev_flag=False, search_file=None):
 
 def muteBtnAction(event=None):
     global play_image, play_image_inv
-    player.volume = 0.0
-    volume_val.configure(text='0')
-    volume_bar.set(100)
+    # player.volume = 0.0
+    # volume_val.configure(text='0')
+    # volume_bar.set(100)
     player.pause()
     music_bar.state(['disabled'])
     play_pause_btn.configure(image=play_image) if theme_btn.cget(
