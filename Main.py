@@ -210,7 +210,6 @@ def secure_generator(prev_flag=False, search_file=None):
     player.seek(0)
     player.seek(0)
     try:
-        player.delete()
         if search_file == None:
             media = pyglet.media.load(
                 dir_musics[secure_choice], streaming=True)
@@ -230,7 +229,10 @@ def secure_generator(prev_flag=False, search_file=None):
         player.next_source()
         return None
     if not corrupt_flag:
-        player.queue(media)
+        try:
+            player.queue(media)
+        except:
+            return "Error"
         if not prev_corrupt_flag and not first_flag:
             player.next_source()
         else:
@@ -296,7 +298,7 @@ def trueShuffle():
         date_modified_flag = False
         date_modified_btn.configure(
             text='Date Modified: Disabled')
-        drop_down['values'] = file_names
+        drop_down['values'] = tuple(alphabetical_list)
     if shuffle_flag:
         shuffle_flag = False
         menu_items[1] = pystray.MenuItem('True Shuffle: Off', on_click)
@@ -340,27 +342,24 @@ audio_set = ('.m4a', '.mp3', '.aac', '.flac', '.wav', '.ogg', '.wma')
 def get_all_files(folder_path):
     global on_close, clear_flag
     if on_close:
-        return [], [], 0
+        return [], 0
     all_files = []
-    file_names = []
     file_count = 0
     try:
         for root, dirs, files in os.walk(folder_path):
             for file in files:
                 if on_close or clear_flag:
-                    return [], [], 0
+                    return [], 0
                 if file.endswith(audio_set):
                     all_files.append(os.path.join(root, file))
-                    file_names.append(file)
                     file_count += 1
     except PermissionError:
-        return [], [], -1
-    return all_files, file_names, file_count
+        return [], -1
+    return all_files, file_count
 
 
-
-file_names = ('', )
-initial_drop_values = ('', )
+alphabetical_list = []
+date_modified_list = []
 
 # File Picker Open
 def openFilePicker():
@@ -388,100 +387,49 @@ def openFilePicker():
 # Search File In Directory
 def loadMusicThread():
     global number_of_files, Directory
-    tmp = directory_box.index("end-1c").split(".")
-    if float(tmp[1])*12.4181818182 > (root.winfo_width()):
-        directory_box.config(height=2)
-        refresh_btn.place(rely=0.41)
     Directory.replace("/", "//")
-    tmp, file_names, tmp_num = get_all_files(Directory)
-    if file_names == [] or tmp_num == 0 or tmp_num == -1:
+    tmp, tmp_num = get_all_files(Directory)
+    if tmp_num == 0 or tmp_num == -1:
         messagebox.showerror("Error", "No Music Files Found In Directory") if tmp_num == 0 else messagebox.showerror('Error', 'Permission Denied To Access Directory')
         return
     directory_box.config(state=NORMAL)
     directory_box.insert(END, Directory + ', ')
     directory_box.config(state=DISABLED)
-    load_thread = threading.Thread(target=loadDateModified, args=(tmp[::], file_names[::], number_of_files))
+    box_len = directory_box.index("end-1c").split(".")
+    if float(box_len[1])*12.4181818182 > (root.winfo_width()):
+        directory_box.config(height=2)
+        refresh_btn.place(rely=0.41)
+    dir_musics.extend(tmp)
+    load_thread = threading.Thread(target=loadDateModified, args=(tmp,))
     load_thread.daemon = True
     load_thread.start()
-    dir_musics.extend(tmp)
     number_of_files += tmp_num
-    tmp.clear()
-    file_names.clear()
-    if music_bar.state()[0] == 'disabled':
+    if music_bar.state() and music_bar.state()[0] == 'disabled':
         threadAction()
 
 
-def merge_sorted_lists(list1, list2):
-    merged_list = []
-    i, j = 0, 0
-
-    while i < len(list1) and j < len(list2):
-        if list1[i] <= list2[j]:
-            merged_list.append(list1[i])
-            i += 1
-        else:
-            merged_list.append(list2[j])
-            j += 1
-
-    # Append remaining elements from list1, if any
-    merged_list.extend(list1[i:])
-
-    # Append remaining elements from list2, if any
-    merged_list.extend(list2[j:])
-
-    return merged_list
-
-def get_unix_time_from_tuple(filename):
-    return int(filename.split('unixStart')[-1].split('searchSelectIndex')[0])
-
-def date_merge_sorted_lists(list1, list2):
-    merged_list = []
-    i, j = 0, 0
-    while i < len(list1) and j < len(list2):
-        if get_unix_time_from_tuple(list1[i]) >= get_unix_time_from_tuple(list2[j]):
-            merged_list.append(list1[i])
-            i += 1
-        else:
-            merged_list.append(list2[j])
-            j += 1
-    merged_list += list1[i:]
-    merged_list += list2[j:]
-    return merged_list
 
 # date modified sort
-def loadDateModified(tmp, date_file_names, number_of_files):
-    global file_names, initial_drop_values, on_close, date_modified_flag
-    res = ()
-    for x, i in enumerate(date_file_names):
-        if not on_close:
-            res += (str(i) + '                                                                                                                          searchSelectIndex' + str(number_of_files+x),)
-        else:
-            return
-    if file_names[0] == '':
-        file_names = res
-    else:
-        file_names = merge_sorted_lists(file_names, res)
-    res = ()
-
+def loadDateModified(tmp):
+    global date_modified_list, on_close, date_modified_flag, alphabetical_list
     date_file_names = sorted(enumerate(tmp), key = lambda x: os.path.getctime(x[1]), reverse=True)
-    for ind, i in date_file_names:
-        if not on_close:
-                res += (str(os.path.basename(i)) + "                                                                                                                unixStart" + str(int(os.path.getctime(i))) + "searchSelectIndex" + str(number_of_files+ind),)
-        else:
-            return
+    for ind, file_path in date_file_names:
+            file_name = os.path.basename(file_path)
+            date_modified_list.append(f"{file_name}#|#{file_path}")
     if on_close:
         return
-    if initial_drop_values[0] == '':
-        initial_drop_values = res[::]
-    else:
-        initial_drop_values = date_merge_sorted_lists(initial_drop_values, res)
-    drop_down['values'] = file_names if not date_modified_flag else initial_drop_values
-
+    if date_modified_flag:
+        drop_down['values'] = tuple(date_modified_list)
+        return
+    for file_path in dir_musics:
+        file_name = os.path.basename(file_path)
+        alphabetical_list.append(f"{file_name}#|#{file_path}")
+    drop_down['values'] = tuple(alphabetical_list)
 clear_flag = False
 
 # Clear Directory
 def clearDirectory():
-    global clear_flag, number_of_files, Directory, file_names, initial_drop_values, date_modified_flag, remember_flag, first_flag
+    global clear_flag, number_of_files, Directory, alphabetical_list, date_modified_list, date_modified_flag, remember_flag, first_flag
     search_box.delete(0, END)
     search_box.insert(0, 'Press Enter To Search')
     search_box.configure(foreground='Gray')
@@ -495,8 +443,8 @@ def clearDirectory():
     drop_down.configure(foreground='Gray')
     played.clear()
     drop_down['values'] = ('',)
-    file_names = ('', )
-    initial_drop_values = ('',)
+    alphabetical_list = []
+    date_modified_list = []
     root.focus_set()
     if first_flag:
         return
@@ -505,7 +453,7 @@ def clearDirectory():
     directory_box.config(state=DISABLED)
     clear_flag = True
     number_of_files = 0
-    Directory = "\n"
+    Directory = ""
 
 # Remember Path
 def rememberPathBtnAction():
@@ -522,16 +470,15 @@ data_file = os.path.join(os.path.dirname(
 
 # Store Path
 def storePath():
-    global number_of_files, Directory, data_file, clear_flag
+    global number_of_files, data_file, clear_flag, Directory
     with open(data_file, 'w', encoding='utf-8') as f:
         if remember_flag and not first_flag:
             f.write(f'{number_of_files} \n')
             f.write(Directory)
             f.writelines('\n'.join(dir_musics)
                          ) if not clear_flag else f.writelines('\n')
-            if initial_drop_values:
-                f.writelines('\nDateModifiedStart\n')
-                f.writelines('\n'.join(initial_drop_values))
+            f.writelines('\nDateModifiedStart\n')
+            f.writelines('\n'.join(date_modified_list))
         else:
             f.write('0')
 
@@ -551,7 +498,9 @@ file_name = ''
 # Play button action
 def playBtnAction(event=None):
     global play_image, pause_image, clear_flag
-    if clear_flag or first_flag or root.focus_get() == search_box :
+    if first_flag:
+        return
+    if clear_flag or (event and root.focus_get() == search_box) :
         return
     if player.playing:
         player.pause()
@@ -564,14 +513,20 @@ def playBtnAction(event=None):
             volume_bar.set(100)
             volume_val.configure(text='50')
         music_bar.state(['!disabled'])
-        player.play()
         play_pause_btn.configure(image=pause_image) if theme_btn.cget(
             'text') == 'Theme: Dark' else play_pause_btn.configure(image=pause_image_inv)
+        try:
+            player.play()
+        except:
+            return
 
 # forward button action
 def forwardBtnAction():
-    player.seek(0)
-    threadAction()
+    try:
+        player.seek(0)
+    except:
+        return
+    threadAction()    
 
 # backward button action
 def previousBtnAction():
@@ -597,6 +552,7 @@ def playerEnd():
         threadAction()
 
 
+
 date_modified_cnt = 0
 
 
@@ -618,19 +574,7 @@ def threadAction(prev_flag=False, search_file=None):
     clear_flag = False
     if first_flag:
         music_bar.state(['!disabled'])
-        if date_modified_flag and search_file is None:
-            date_modified_cnt = date_modified_cnt % number_of_files
-            if not prev_flag:
-                index = int(initial_drop_values[date_modified_cnt].rsplit('searchSelectIndex')[-1])
-                file_name = secure_generator(prev_flag, dir_musics[index])
-            else:
-                index = int(initial_drop_values[max(0, date_modified_cnt-2)].rsplit('searchSelectIndex')[-1])
-                file_name = secure_generator(False, dir_musics[index])
-                date_modified_cnt -= 2
-            playing_index = index
-            date_modified_cnt += 1
-        else:
-            file_name = secure_generator(prev_flag, search_file)
+        file_name = secure_generator(prev_flag, search_file)
         first_flag = False
         if corrupt_flag:
             music_bar.state(['disabled'])
@@ -639,14 +583,15 @@ def threadAction(prev_flag=False, search_file=None):
         player.pause()
         if date_modified_flag and search_file is None:
             date_modified_cnt = date_modified_cnt % number_of_files
+            name = ''
             if not prev_flag:
-                index = int(initial_drop_values[date_modified_cnt].rsplit('searchSelectIndex')[-1])
-                file_name = secure_generator(prev_flag, dir_musics[index])
+                name = date_modified_list[date_modified_cnt].split('#|#')[-1]
+                file_name = secure_generator(prev_flag, name)
             else:
-                index = int(initial_drop_values[max(0, date_modified_cnt-2)].rsplit('searchSelectIndex')[-1])
-                file_name = secure_generator(False, dir_musics[index])
+                name = date_modified_list[max(0, date_modified_cnt-2)].split('#|#')[-1]
+                file_name = secure_generator(False, name)
                 date_modified_cnt -= 2
-            playing_index = index
+            playing_index = dir_musics.index(name)
             date_modified_cnt += 1
         else:
             file_name = secure_generator(prev_flag, search_file)
@@ -746,7 +691,7 @@ def update_seekbar():
     root.after(1000, update_seekbar)
 
 def date_modified_btn_action():
-    global date_modified_flag, date_modified_cnt, shuffle_flag, file_names , initial_drop_values
+    global date_modified_flag, date_modified_cnt, shuffle_flag, alphabetical_list , date_modified_list
     date_modified_cnt = 0
     if shuffle_flag:
         shuffle_flag = False
@@ -755,10 +700,10 @@ def date_modified_btn_action():
         menu_items[1] = pystray.MenuItem('True Shuffle: Off', on_click)
         icon.menu = pystray.Menu(*menu_items)        
     if date_modified_flag:
-        drop_down['values'] = file_names[::]
+        drop_down['values'] = tuple(alphabetical_list)
         date_modified_btn.configure(text="Date Modified: Disabled")
     else:
-        drop_down['values'] = initial_drop_values[::]
+        drop_down['values'] = tuple(date_modified_list)
         date_modified_btn.configure(text="Date Modified: Enabled")
     date_modified_flag = not date_modified_flag
 
@@ -766,32 +711,27 @@ def date_modified_btn_action():
 def search_play_song(event=None):
     if search_song.get().strip() == 'No items match your search':
         return # If search box is empty, do nothing
-    global date_modified_cnt, date_modified_flag, initial_drop_values
+    global date_modified_cnt, date_modified_flag
     if date_modified_flag:
         date_modified_cnt = event.widget.current() + 1
     player.pause()
-    index = int(search_song.get().rsplit('searchSelectIndex', 1)[-1])
-    root.focus_set()
-    threadAction(False, dir_musics[index])
+    selected_value = search_song.get()
+    selected_file_path = selected_value.split("#|#")[1]
+    threadAction(False, selected_file_path)
 
 
 def search(event=None):
-    global previous_search_term, initial_drop_values, file_names, date_modified_flag
+    global previous_search_term, date_modified_list, alphabetical_list, date_modified_flag
     search_term = search_box.get().strip().lower()
     if search_term == '':
-        drop_down['values'] = initial_drop_values if date_modified_flag else file_names
+        drop_down['values'] = tuple(date_modified_list) if date_modified_flag else tuple(alphabetical_list)
         drop_down.selection_clear()
         drop_down.focus()
         drop_down.event_generate("<Down>")
     elif search_term != previous_search_term:
-        found = False
-        search_results = []
-        for ind, item in enumerate(dir_musics):
-            if search_term in item.lower():
-                found = True
-                search_results.append(os.path.basename(item) + "                                                                                                                          searchSelectIndex" + str(ind))
-        if not found:
-            search_results.append("No items match your search")
+        search_results = [f"{os.path.basename(item)}#|#{item}" for item in dir_musics if search_term in item.lower()]
+        if not search_results:
+            search_results = ["No items match your search"]
         drop_down['values'] = tuple(search_results)
         drop_down.selection_clear()
         drop_down.focus()
@@ -819,51 +759,19 @@ def directoryBoxThread():
 
 
 def refreshBtnAction():
-    global directory_box_flag, number_of_files, on_close, initial_drop_values, file_names, date_modified_flag
+    global number_of_files, on_close, date_modified_list, date_modified_flag
     number_of_files = 0
-    if not directory_box_flag:
-        refresh_btn.configure(text="Refreshing...", state="disabled")
-        directory_box_flag = True
-        drop_down['values'] = ('', )
-        initial_drop_values = ('', )
-        file_names = ('', )
-        dir_musics.clear()
-        directories = [d.strip() for d in directory_box.get("1.0", END).split(",") if d.strip()]
-        if not directories:
-            messagebox.showerror("Error", "Please select a directory to refresh.")
-            refresh_btn.configure(text="Refresh", state="normal")
-            directory_box_flag = False
-            return
-        for Directory in directories:
-            Directory = Directory.replace("/", "//")
-            tmp, date_file_names, tmp_num = get_all_files(Directory)
-            if not tmp_num or date_file_names == []:
-                messagebox.showerror("Error", "Permission Denied To Access Directory")
-                refresh_btn.configure(text="Refresh", state="normal")
-                directory_box_flag = False
-                return
-            res = ('', )
-            for x, i in enumerate(date_file_names):
-                if not on_close:
-                    res += tuple([str(i) + '                                                                                                                          searchSelectIndex' + str(x)])
-                else:
-                    return
-            file_names += res[1::]
-            dir_musics.extend(tmp)
-            res = ('', )
-            number_of_files += tmp_num
-            date_file_names = sorted(enumerate(zip(tmp, date_file_names)), key = lambda x: os.path.getmtime(x[1][0]), reverse=True)
-            for ind, i in date_file_names:
-                if not on_close:
-                    initial_drop_values += tuple([str(i[1]) + '                                                                                                                          searchSelectIndex' + str(ind)])
-                else:
-                    return
-        if on_close:
-            return
-        file_names = file_names[1::]   
-        drop_down['values'] = file_names
+    refresh_btn.configure(text="Refreshing...", state="disabled")
+    date_modified_list = []
+    dir_musics = []
+    directories = [d.strip() for d in directory_box.get("1.0", END).split(",") if d.strip()]
+    for Directory in directories:
+        tmp, tmp_num = get_all_files(Directory)
+        dir_musics.extend(tmp)
+        loadDateModified(tmp)
+        number_of_files += tmp_num
+    if not on_close:
         refresh_btn.configure(text="Refresh", state="normal")
-        directory_box_flag = False
 
 def refreshThreadAction():
     global directory_box_flag
@@ -875,45 +783,44 @@ def refreshThreadAction():
 def set_focus(event):
     if event.widget == root:
         root.focus_set()
-
 def readData():
-    global Directory, dir_musics, drop_down, initial_drop_values, number_of_files, file_names, on_close
+    global Directory, drop_down, number_of_files, on_close
     with open(data_file, 'r', encoding='utf-8') as f:
         number_of_files = f.readline().strip()
         if number_of_files != '':
             number_of_files = int(number_of_files)
             if number_of_files > 0:
-                rememberPathBtnAction()
-                directory_box.config(state=NORMAL)
-                directory_box.insert(END, f.readline().strip())
-                directory_box.config(state=DISABLED)
-                tmp = directory_box.index("end-1c").split(".")
-                if float(tmp[1])*12.4181818182 > (root.winfo_width()):
-                    directory_box.config(height=2)
-                    refresh_btn.place(rely=0.41)
-                Directory = '\n'
-                current_index = 0
+                Directory = ''
+                Directory += f.readline().strip()
+                alphabetical_list = []
                 for line in f:
                     line = line.strip()
                     if line == 'DateModifiedStart' or on_close or line == '':
                         break
                     if line:
                         dir_musics.append(line)
-                        file_names += (os.path.basename(line)+ "                                                                                                                          searchSelectIndex" + str(current_index),)
-                        current_index += 1
+                        file_name = os.path.basename(line)
+                        alphabetical_list.append(f"{file_name}#|#{line}")
                 if on_close:
                     return
-                play_thread = threading.Thread(target=threadAction)
-                play_thread.daemon = True
-                play_thread.start() 
-                file_names = file_names[1::]   
-                drop_down['values'] = file_names
                 for line in f:
                     line = line.strip()
                     if line and not on_close:
-                        initial_drop_values += (line,)
+                        date_modified_list.append(line)
                     else:
                         break
+                play_thread = threading.Thread(target=threadAction)
+                play_thread.daemon = True
+                play_thread.start() 
+                rememberPathBtnAction()
+                directory_box.config(state=NORMAL)
+                directory_box.insert(END, Directory)
+                directory_box.config(state=DISABLED)
+                tmp = directory_box.index("end-1c").split(".")
+                if float(tmp[1])*12.4181818182 > (root.winfo_width()):
+                    directory_box.config(height=2)
+                    refresh_btn.place(rely=0.41)
+                drop_down['values'] = tuple(alphabetical_list)
             else:
                 root.deiconify()
                 root.lift()
@@ -1252,7 +1159,10 @@ menu_items = [
 def pystrayTray():
     global icon, shuffle_flag
     icon.menu = pystray.Menu(*menu_items)
-    icon.run()
+    try:
+        icon.run()
+    except:
+        return
     onClosing()
     return
 
@@ -1300,17 +1210,18 @@ def onMinimize(event):
 
 def onClosing():
     global on_close, Directory, icon
-    os.remove(LOCK_FILE)
+    Directory = directory_box.get("1.0", END)
     on_close = True
     try:
-        Directory = directory_box.get("1.0", END)
+        os.remove(LOCK_FILE)
         store_path_thread.start()
         icon.stop()
         played.clear()
         player.pause()
         pyglet.app.exit()
         root.destroy()
-    except RuntimeError:
+    except Exception as e:
+        print(e)
         os.kill(os.getpid(), 9)
 
 
