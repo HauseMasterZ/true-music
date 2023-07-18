@@ -1126,9 +1126,13 @@ def hotkeys():
     global hotkey_flag
     if hotkey_flag:
         hotkey_flag = False
+        menu_items[7] = pystray.MenuItem('Hotkeys: Off', on_click)
+        icon.menu = pystray.Menu(*menu_items)
         hotkey_btn.configure(text="Hotkeys: Off")
     else:
         hotkey_flag = True
+        menu_items[7] = pystray.MenuItem('Hotkeys: On', on_click)
+        icon.menu = pystray.Menu(*menu_items)
         hotkey_btn.configure(text="Hotkeys: On")
         mediaKeysThread = threading.Thread(target=checkMediaKeys)
         mediaKeysThread.daemon = True
@@ -1218,6 +1222,8 @@ def on_click(icon, item):
         autoRepeat()
     elif item.text == 'Autoplay: On' or item.text == 'Autoplay: Off':
         autoPlay()
+    elif item.text == 'Hotkeys: On' or item.text == 'Hotkeys: Off':
+        hotkeys()
 
 def showRoot(icon=None, item=None):
     if root.state() == 'normal':
@@ -1239,6 +1245,7 @@ menu_items = [
     pystray.MenuItem('Next Track', on_click),
     pystray.MenuItem('Play/Pause', on_click),
     pystray.MenuItem('Previous Track', on_click),
+    pystray.MenuItem('Hotkeys: Off', on_click),
     pystray.MenuItem('Quit', on_click),
 ]
 
