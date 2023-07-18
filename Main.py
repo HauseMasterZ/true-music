@@ -1121,7 +1121,6 @@ theme_btn.configure(background='#121212', foreground='white', activebackground='
 theme_btn.place(anchor=W, relx=0.01, rely=0.1, relheight=0.11, relwidth=0.11)
 
 
-
 def hotkeys():
     global hotkey_flag
     if hotkey_flag:
