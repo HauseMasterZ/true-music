@@ -400,7 +400,6 @@ def loadMusicThread():
         threadAction()
 
 
-
 # date modified sort
 def loadDateModified(tmp):
     global date_modified_list, on_close, date_modified_flag, alphabetical_list
@@ -467,6 +466,7 @@ def storePath():
         if remember_flag and not first_flag:
             f.write(f'{number_of_files} \n')
             f.write(Directory)
+            f.write('\n')
             f.writelines('\n'.join(dir_musics)
                          ) if not clear_flag else f.writelines('\n')
             f.writelines('\nDateModifiedStart\n')
@@ -777,6 +777,10 @@ def set_focus(event):
         root.focus_set()
 def readData():
     global Directory, drop_down, number_of_files, on_close
+    if not os.path.exists(data_file):
+        with open(data_file, 'w', encoding='utf-8') as f:
+            f.write('0')
+            return
     with open(data_file, 'r', encoding='utf-8') as f:
         number_of_files = f.readline().strip()
         if number_of_files != '':
@@ -1202,10 +1206,11 @@ def onMinimize(event):
 
 def onClosing():
     global on_close, Directory, icon
-    Directory = directory_box.get("1.0", END)
+    # Directory = directory_box.get("1.0", END)
+    Directory = root.call(directory_box, 'get', '1.0', 'end-1c')
+    store_path_thread.start()
     on_close = True
     try:
-        store_path_thread.start()
         icon.stop()
         played.clear()
         player.pause()
