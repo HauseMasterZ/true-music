@@ -1,13 +1,5 @@
 import os
 from tkinter import messagebox
-LOCK_FILE = os.path.join(os.path.dirname(__file__), 'lock_file')
-if os.path.exists(LOCK_FILE):
-    messagebox.showerror("Error", "True Music is already running!")
-    import sys
-    sys.exit(0)
-else:
-    with open(LOCK_FILE, 'w') as lock_file:
-        pass
 from pynput import keyboard
 import threading
 from tkinter import *
@@ -1213,7 +1205,6 @@ def onClosing():
     Directory = directory_box.get("1.0", END)
     on_close = True
     try:
-        os.remove(LOCK_FILE)
         store_path_thread.start()
         icon.stop()
         played.clear()
@@ -1221,7 +1212,6 @@ def onClosing():
         pyglet.app.exit()
         root.destroy()
     except Exception as e:
-        print(e)
         os.kill(os.getpid(), 9)
 
 
