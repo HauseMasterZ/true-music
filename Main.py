@@ -1101,6 +1101,7 @@ repeat_btn.configure(background='#121212', foreground='white',
                      activebackground='#121212', relief="ridge", borderwidth=1, activeforeground='grey')
 
 
+
 repeat_btn.place(relx=0.5, rely=0.85, anchor=CENTER, relheight=0.15, width=120)
 
 always_on_top_btn = Button(root, text="Always On Top: Disabled",
