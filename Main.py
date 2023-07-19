@@ -96,7 +96,7 @@ def changeTheme():
         title.configure(background="White", foreground="Black")
         theme_btn.configure(text="Theme: Light", background='White',
                             foreground='Black', activebackground='White', activeforeground='gray')
-        hotkey_btn.configure(background='White', foreground='Black')
+        hotkey_btn.configure(background='White', foreground='Black', activebackground='White', activeforeground='gray')
         directory_box.configure(background='#c2c1c1', foreground='Black')
         volume_icon.configure(image=volume_image_inv, background='White')
         play_pause_btn.configure(
@@ -133,7 +133,7 @@ def changeTheme():
         title.configure(background="#121212", foreground="White")
         theme_btn.configure(text="Theme: Dark", background='#121212',
                             foreground='white', activebackground='#121212', activeforeground='gray')
-        hotkey_btn.configure(background='#121212', foreground='white')
+        hotkey_btn.configure(background='#121212', foreground='white', activebackground='#121212', activeforeground='gray')
         directory_box.configure(background='#0D0901', foreground='white')
         volume_icon.configure(image=volume_image)
         play_pause_btn.configure(
@@ -192,7 +192,6 @@ def secure_generator(prev_flag=False, search_file=None):
         else:
             played.clear()
     try:
-        # player.seek(0.0)
         if search_file == None:
             media = pyglet.media.load(
                 dir_musics[secure_choice], streaming=True)
@@ -589,7 +588,7 @@ def threadAction(prev_flag=False, search_file=None):
     track_length = int(player.source.duration)
     now_playing.configure(text=f'Now playing: {file_name[:75]}')
     try:
-        icon.title = file_name[:75]
+        icon.title = file_name[:75] if file_name else 'True Music'
         player.delete()
         player.seek(0.0)
         player.play()
