@@ -182,37 +182,28 @@ def secure_generator(prev_flag=False, search_file=None):
         if shuffle_flag:
             secure_choice = secretsGenerator.randint(0, number_of_files-1)
         else:
-            if not first_flag:
-                if prev_flag:
-                    secure_choice = max(playing_index - 1, 0)
-                else:
-                    secure_choice = playing_index + 1
-            else:
-                secure_choice = playing_index
+            secure_choice = (max(playing_index - 1, 0) if prev_flag else playing_index + 1) if not first_flag else playing_index
         if secure_choice in played and shuffle_flag:
             if len(played) > number_of_files-1:
                 played.clear()
             while secure_choice in played:
                 secure_choice = secretsGenerator.randint(0, number_of_files-1)
-        if shuffle_flag:
             played.add(secure_choice)
         else:
             played.clear()
-    player.pause()
-    player.seek(0)
-    player.seek(0)
     try:
+        # player.seek(0.0)
         if search_file == None:
             media = pyglet.media.load(
                 dir_musics[secure_choice], streaming=True)
         else:
             media = pyglet.media.load(search_file, streaming=True)
+        player.queue(media)
         corrupt_flag = False
     except:
         messagebox.showerror('Invalid Media Found',
                              'Some if not all media files are corrupted')
         clearDirectory()
-        player.delete()
         directory_box.config(state=NORMAL)
         directory_box.delete("1.0", END)
         directory_box.config(state=DISABLED)
@@ -220,22 +211,15 @@ def secure_generator(prev_flag=False, search_file=None):
         prev_corrupt_flag = True
         player.next_source()
         return None
-    if not corrupt_flag:
-        try:
-            player.queue(media)
-        except:
-            return "Error"
-        if not prev_corrupt_flag and not first_flag:
-            player.next_source()
-        else:
-            prev_corrupt_flag = False
-        player.delete()
-    media = None
-    del media
+    if not prev_corrupt_flag and not first_flag:
+        player.next_source()
+    else:
+        prev_corrupt_flag = False
     if search_file == None:
         playing_index = secure_choice
         return os.path.basename(dir_musics[secure_choice])
     else:
+        playing_index = dir_musics.index(search_file)
         return os.path.basename(search_file)
 
 # Autoplay
@@ -260,12 +244,8 @@ def autoPlay():
             menu_items[2] = pystray.MenuItem('Repeat: Off', on_click)
             icon.menu = pystray.Menu(*menu_items)
 
-
-
 always_on_top_flag = False
 shuffle_flag = True
-
-
 
 # Always On Top
 def alwaysOnTop():
@@ -359,9 +339,6 @@ def openFilePicker():
     directory_box_flag = True
     if first_flag:
         now_playing.configure(text='Now Playing: Please Wait...')
-    if clear_flag:
-        dir_musics.clear()
-    clear_flag = False
     Directory = filedialog.askdirectory(title="Select Directory")
     Directory += "/"
     if Directory != '/' and Directory in directory_box.get("1.0", "end-1c"):
@@ -371,65 +348,95 @@ def openFilePicker():
         load_music_thread.daemon = True
         load_music_thread.start()
         directory_box_flag = False
+        clear_flag = False
         return
     directory_box_flag = False
     if first_flag:
         now_playing.configure(text='Now Playing: ')
 
+def merge_sorted_lists(list1, list2, date=False):
+    merged_list = []
+    i, j = 0, 0
+    while i < len(list1) and j < len(list2):
+        if not date:
+            if list1[i] < list2[j]:
+                merged_list.append(list1[i])
+                i += 1
+            else:
+                merged_list.append(list2[j])
+                j += 1
+        else:
+            file_path1 = list1[i].split("#|#")[1]
+            file_path2 = list2[j].split("#|#")[1]
+            if os.path.getctime(file_path1) > os.path.getctime(file_path2):
+                merged_list.append(list1[i])
+                i += 1
+            else:
+                merged_list.append(list2[j])
+                j += 1
+
+    # Append remaining elements from list1 and list2, if any
+    merged_list.extend(list1[i:])
+    merged_list.extend(list2[j:])
+
+    return merged_list
+
+
 # Search File In Directory
 def loadMusicThread():
-    global number_of_files, Directory
+    global number_of_files, Directory, dir_musics
     Directory.replace("/", "//")
     tmp, tmp_num = get_all_files(Directory)
     if tmp_num == 0 or tmp_num == -1:
         messagebox.showerror("Error", "No Music Files Found In Directory") if tmp_num == 0 else messagebox.showerror('Error', 'Permission Denied To Access Directory')
         return
-    directory_box.config(state=NORMAL)
-    directory_box.insert(END, Directory + ', ')
-    directory_box.config(state=DISABLED)
-    box_len = directory_box.index("end-1c").split(".")
-    if float(box_len[1])*12.4181818182 > (root.winfo_width()):
-        directory_box.config(height=2)
-        refresh_btn.place(rely=0.41)
-    dir_musics.extend(tmp)
     load_thread = threading.Thread(target=loadDateModified, args=(tmp,))
     load_thread.daemon = True
     load_thread.start()
+    dir_musics = merge_sorted_lists(dir_musics, tmp)
     number_of_files += tmp_num
     if music_bar.state() and music_bar.state()[0] == 'disabled':
         threadAction()
-
+    directory_box.config(state=NORMAL)
+    directory_box.insert(END, Directory + ', ')
+    directory_box.config(state=DISABLED)
+    if float(len(directory_box.get('0.0', 'end-1c')))*12.4181818182 > (root.winfo_width()):
+        directory_box.config(height=2)
+        refresh_btn.place(rely=0.41)
 
 # date modified sort
-def loadDateModified(tmp):
+def loadDateModified(all_paths):
     global date_modified_list, on_close, date_modified_flag, alphabetical_list
-    date_file_names = sorted(enumerate(tmp), key = lambda x: os.path.getctime(x[1]), reverse=True)
-    for ind, file_path in date_file_names:
+    tmp = []
+    date_file_names = sorted(all_paths, key = lambda x: os.path.getctime(x), reverse=True)
+    for file_path in date_file_names:
             file_name = os.path.basename(file_path)
-            date_modified_list.append(f"{file_name}#|#{file_path}")
+            tmp.append(f"{file_name}#|#{file_path}")
+    date_modified_list = merge_sorted_lists(date_modified_list, tmp, date=True)
     if on_close:
         return
     if date_modified_flag:
         drop_down['values'] = tuple(date_modified_list)
         return
-    for file_path in dir_musics:
+    tmp = []
+    for file_path in all_paths:
         file_name = os.path.basename(file_path)
-        alphabetical_list.append(f"{file_name}#|#{file_path}")
+        tmp.append(f"{file_name}#|#{file_path}")
+    alphabetical_list = merge_sorted_lists(alphabetical_list, tmp)
     drop_down['values'] = tuple(alphabetical_list)
+
+
 clear_flag = False
 
 # Clear Directory
 def clearDirectory():
-    global clear_flag, number_of_files, Directory, alphabetical_list, date_modified_list, date_modified_flag, remember_flag, first_flag
+    global clear_flag, number_of_files, Directory, alphabetical_list, date_modified_list
     search_box.delete(0, END)
+    dir_musics.clear()
     search_box.insert(0, 'Press Enter To Search')
     search_box.configure(foreground='Gray')
     directory_box.config(height=1)
     refresh_btn.place(rely=0.43)
-    date_modified_btn.configure(text="Date Modified: Disabled")
-    date_modified_flag = False
-    remember_btn.configure(text='Store Path: Disabled')
-    remember_flag = False
     drop_down.set('All Music Files appear here')
     drop_down.configure(foreground='Gray')
     played.clear()
@@ -437,13 +444,12 @@ def clearDirectory():
     alphabetical_list = []
     date_modified_list = []
     root.focus_set()
-    if first_flag:
-        return
     directory_box.config(state=NORMAL)
     directory_box.delete("1.0", END)
     directory_box.config(state=DISABLED)
     clear_flag = True
     number_of_files = 0
+    icon.title = "True Music"
     Directory = ""
 
 # Remember Path
@@ -461,14 +467,13 @@ data_file = os.path.join(os.path.dirname(
 
 # Store Path
 def storePath():
-    global number_of_files, data_file, clear_flag, Directory
+    global number_of_files, data_file, Directory
     with open(data_file, 'w', encoding='utf-8') as f:
         if remember_flag and not first_flag:
             f.write(f'{number_of_files} \n')
             f.write(Directory)
             f.write('\n')
-            f.writelines('\n'.join(dir_musics)
-                         ) if not clear_flag else f.writelines('\n')
+            f.writelines('\n'.join(dir_musics))
             f.writelines('\nDateModifiedStart\n')
             f.writelines('\n'.join(date_modified_list))
         else:
@@ -522,7 +527,7 @@ def forwardBtnAction():
 
 # backward button action
 def previousBtnAction():
-    player.pause()
+    player.delete()
     player.seek(0)
     threadAction(True)
 
@@ -530,28 +535,17 @@ def previousBtnAction():
 def playerEnd():
     global repeat_flag, auto_play_flag
     if repeat_flag:
-        player.pause()
+        player.delete()
         player.seek(0)
-        player.seek(0)
-        update_seekbar()
-        play_pause_btn.configure(image=pause_image) if theme_btn.cget(
-            'text') == 'Theme: Dark' else play_pause_btn.configure(image=pause_image_inv)
         player.play()
     elif auto_play_flag:
-        player.pause()
-        player.seek(0)
-        player.seek(0)
         threadAction()
-
-
 
 date_modified_cnt = 0
 
-
 # Play Music
 def threadAction(prev_flag=False, search_file=None):
-    global first_flag, length_of_music, file_name, clear_flag, corrupt_flag, date_modified_flag, playing_index, date_modified_cnt, number_of_files
-    player.delete()
+    global first_flag, file_name, clear_flag, corrupt_flag, date_modified_flag, date_modified_cnt, number_of_files
     if clear_flag:
         music_bar.set(0)
         player.pause()
@@ -561,18 +555,19 @@ def threadAction(prev_flag=False, search_file=None):
         seek_of_music.configure(text='00:00')
         now_playing.configure(text='Now playing: ')
         length_of_music.configure(text='00:00')
-        dir_musics.clear()
         return
     clear_flag = False
     if first_flag:
+        seekbar_thread = threading.Thread(target=update_seekbar)
+        seekbar_thread.daemon = True
+        seekbar_thread.start()
         music_bar.state(['!disabled'])
         file_name = secure_generator(prev_flag, search_file)
         first_flag = False
-        if corrupt_flag:
+        if corrupt_flag or file_name is None:
             music_bar.state(['disabled'])
             return
     else:
-        player.pause()
         if date_modified_flag and search_file is None:
             date_modified_cnt = date_modified_cnt % number_of_files
             name = ''
@@ -583,26 +578,30 @@ def threadAction(prev_flag=False, search_file=None):
                 name = date_modified_list[max(0, date_modified_cnt-2)].split('#|#')[-1]
                 file_name = secure_generator(False, name)
                 date_modified_cnt -= 2
-            playing_index = dir_musics.index(name)
             date_modified_cnt += 1
         else:
             file_name = secure_generator(prev_flag, search_file)
-        if corrupt_flag:
+        if corrupt_flag or file_name is None:
             music_bar.state(['disabled'])
             return
-    playBtnAction()
-    track_length = int(player.source.duration) + 2
+    play_pause_btn.configure(image=pause_image) if theme_btn.cget(
+    'text') == 'Theme: Dark' else play_pause_btn.configure(image=pause_image_inv)
+    track_length = int(player.source.duration)
     now_playing.configure(text=f'Now playing: {file_name[:75]}')
+    try:
+        icon.title = file_name[:75]
+        player.delete()
+        player.seek(0.0)
+        player.play()
+    except:
+        pass
     mins = track_length//60
     secs = (track_length % 60)
     length_of_music.configure(text=f'{mins}:{secs:02d}')
-    update_seekbar()
+
 
 def muteBtnAction(event=None):
     global play_image, play_image_inv
-    # player.volume = 0.0
-    # volume_val.configure(text='0')
-    # volume_bar.set(100)
     player.pause()
     music_bar.state(['disabled'])
     play_pause_btn.configure(image=play_image) if theme_btn.cget(
@@ -621,12 +620,9 @@ def seek_tap(event):
     if player.playing:
         seek_position = event.x / (root.winfo_width()/3)
         total_time = player.source.duration
+        player.delete()
         player.seek((seek_position * total_time))
-        def seekAgain():
-            player.seek((seek_position * total_time))
-            return
-        root.after(100, seekAgain)
-        return
+        player.play()
 
 
 # key press
@@ -641,15 +637,16 @@ def on_key_press(event):
         muteBtnAction()
     elif root.focus_get() != search_box:
         if event.keysym == "Right":
-            player.seek(player.time)
-            def seekAgain():
-                player.seek(player.time + 5)
-            root.after(100, seekAgain)
+            try:
+                player.delete()
+                player.seek(player.time+5)
+                player.play()
+            except:
+                return
         elif event.keysym == "Left":
-            player.seek(player.time)
-            def seekAgain():
-                player.seek(player.time - 5)
-            root.after(100, seekAgain)
+            player.delete()
+            player.seek(player.time - 5)
+            player.play()
         elif event.keysym == "Down":
             drop_down.focus()
         elif event.state & 1 and event.keysym.lower() == "n":
@@ -665,22 +662,18 @@ def update_seekbar():
     if player.playing and player.source:
         icon.title = file_name[:65]
         current_time = player.time
-        total_time = player.source.duration + 2
+        total_time = player.source.duration
         if current_time > total_time:
-            playBtnAction()
             on_eos = threading.Thread(target=playerEnd)
             on_eos.daemon = True
             on_eos.start()
-            return
+            player.pause()
         mins, secs = divmod(int(current_time), 60)
         seek_of_music.configure(
             text=f'0{mins}:{secs:02d}')
         seek_position = (current_time / total_time) * music_bar.winfo_width()
         music_bar.set(seek_position)
-    else:
-        icon.title = "True Music"
-
-    root.after(1000, update_seekbar)
+    root.after(100, update_seekbar)
 
 def date_modified_btn_action():
     global date_modified_flag, date_modified_cnt, shuffle_flag, alphabetical_list , date_modified_list
@@ -759,7 +752,7 @@ def refreshBtnAction():
     directories = [d.strip() for d in directory_box.get("1.0", END).split(",") if d.strip()]
     for Directory in directories:
         tmp, tmp_num = get_all_files(Directory)
-        dir_musics.extend(tmp)
+        dir_musics = merge_sorted_lists(dir_musics, tmp)
         loadDateModified(tmp)
         number_of_files += tmp_num
     if not on_close:
@@ -776,7 +769,7 @@ def set_focus(event):
     if event.widget == root:
         root.focus_set()
 def readData():
-    global Directory, drop_down, number_of_files, on_close
+    global Directory, drop_down, number_of_files, on_close, date_modified_list
     if not os.path.exists(data_file):
         with open(data_file, 'w', encoding='utf-8') as f:
             f.write('0')
@@ -799,12 +792,7 @@ def readData():
                         alphabetical_list.append(f"{file_name}#|#{line}")
                 if on_close:
                     return
-                for line in f:
-                    line = line.strip()
-                    if line and not on_close:
-                        date_modified_list.append(line)
-                    else:
-                        break
+                date_modified_list = [line.strip() for line in f]
                 play_thread = threading.Thread(target=threadAction)
                 play_thread.daemon = True
                 play_thread.start() 
@@ -812,8 +800,7 @@ def readData():
                 directory_box.config(state=NORMAL)
                 directory_box.insert(END, Directory)
                 directory_box.config(state=DISABLED)
-                tmp = directory_box.index("end-1c").split(".")
-                if float(tmp[1])*12.4181818182 > (root.winfo_width()):
+                if float(len(Directory))*12.4181818182 > (root.winfo_width()):
                     directory_box.config(height=2)
                     refresh_btn.place(rely=0.41)
                 drop_down['values'] = tuple(alphabetical_list)
@@ -927,8 +914,8 @@ drop_down['values'] = ('', )
 
 music_bar = ttk.Scale(root, from_=0, to=100, orient=HORIZONTAL,
                       style='myStyle.Horizontal.TScale', cursor='crosshair')
-# music_bar.bind('<Button-1>', seek_tap)
-music_bar.bind('<ButtonRelease-1>', seek_tap)
+music_bar.bind('<Button-1>', seek_tap)
+# music_bar.bind('<ButtonRelease-1>', seek_tap)
 music_bar.place(relx=0.5, rely=0.2, anchor=CENTER, relwidth=0.33)
 music_bar.state(['disabled'])
 
