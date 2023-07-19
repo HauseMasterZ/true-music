@@ -10,17 +10,6 @@ import pyglet
 import pystray
 import PIL.Image
 
-root = Tk()
-root.minsize(200, 50)
-root.geometry(f"{root.winfo_screenwidth()//2}x{root.winfo_screenheight()//2}")
-root.configure(background="#121212")
-root.title("True Music")
-root.withdraw()
-
-# Heading
-title = Label(root, text="True Music ~ HauseMaster", font=("Corbel", 13))
-title.place(relx=0.5, rely=0.1, anchor=CENTER)
-title.configure(background="#121212", foreground="#f0f0f0")
 
 
 
@@ -29,7 +18,6 @@ dir_musics = []
 number_of_files = 0
 remember_flag = False
 secretsGenerator = secrets.SystemRandom()
-
 
 
 # Functions
@@ -197,7 +185,6 @@ def secure_generator(prev_flag=False, search_file=None):
                 dir_musics[secure_choice], streaming=True)
         else:
             media = pyglet.media.load(search_file, streaming=True)
-        player.queue(media)
         corrupt_flag = False
     except:
         messagebox.showerror('Invalid Media Found',
@@ -210,6 +197,7 @@ def secure_generator(prev_flag=False, search_file=None):
         prev_corrupt_flag = True
         player.next_source()
         return None
+    player.queue(media)
     if not prev_corrupt_flag and not first_flag:
         player.next_source()
     else:
@@ -389,13 +377,13 @@ def loadMusicThread():
     if tmp_num == 0 or tmp_num == -1:
         messagebox.showerror("Error", "No Music Files Found In Directory") if tmp_num == 0 else messagebox.showerror('Error', 'Permission Denied To Access Directory')
         return
-    load_thread = threading.Thread(target=loadDateModified, args=(tmp,))
-    load_thread.daemon = True
-    load_thread.start()
     dir_musics = merge_sorted_lists(dir_musics, tmp)
     number_of_files += tmp_num
     if music_bar.state() and music_bar.state()[0] == 'disabled':
         threadAction()
+    load_thread = threading.Thread(target=loadDateModified, args=(tmp,))
+    load_thread.daemon = True
+    load_thread.start()
     directory_box.config(state=NORMAL)
     directory_box.insert(END, Directory + ', ')
     directory_box.config(state=DISABLED)
@@ -460,9 +448,7 @@ def rememberPathBtnAction():
         remember_btn.configure(text='Store Path: Enabled')
     remember_flag = not remember_flag
 
-# data file path modify here
-data_file = os.path.join(os.path.dirname(
-    os.path.abspath(__file__)), 'data.txt')
+
 
 # Store Path
 def storePath():
@@ -598,6 +584,54 @@ def threadAction(prev_flag=False, search_file=None):
     secs = (track_length % 60)
     length_of_music.configure(text=f'{mins}:{secs:02d}')
 
+# data file path modify here
+data_file = os.path.join(os.path.dirname(
+    os.path.abspath(__file__)), 'data.txt')
+def readData():
+    global Directory, drop_down, number_of_files, on_close, date_modified_list
+    if not os.path.exists(data_file):
+        with open(data_file, 'w', encoding='utf-8') as f:
+            f.write('0')
+            return
+    with open(data_file, 'r', encoding='utf-8') as f:
+        number_of_files = f.readline().strip()
+        if number_of_files != '':
+            number_of_files = int(number_of_files)
+            if number_of_files > 0:
+                Directory = ''
+                Directory += f.readline().strip()
+                alphabetical_list = []
+                for line in f:
+                    line = line.strip()
+                    if line == 'DateModifiedStart' or on_close or line == '':
+                        break
+                    if line:
+                        dir_musics.append(line)
+                        file_name = os.path.basename(line)
+                        alphabetical_list.append(f"{file_name}#|#{line}")
+                if on_close:
+                    return
+                play_thread = threading.Thread(target=threadAction)
+                play_thread.daemon = True
+                play_thread.start() 
+                date_modified_list = [line.strip() for line in f]
+                rememberPathBtnAction()
+                directory_box.config(state=NORMAL)
+                directory_box.insert(END, Directory)
+                directory_box.config(state=DISABLED)
+                if float(len(Directory))*12.4181818182 > (root.winfo_width()):
+                    directory_box.config(height=2)
+                    refresh_btn.place(rely=0.41)
+                drop_down['values'] = tuple(alphabetical_list)
+            else:
+                root.deiconify()
+                root.lift()
+                root.focus_force()
+        else:
+            root.deiconify()
+            root.lift()
+            root.focus_force()
+
 
 def muteBtnAction(event=None):
     global play_image, play_image_inv
@@ -698,6 +732,7 @@ def search_play_song(event=None):
     global date_modified_cnt, date_modified_flag
     if date_modified_flag:
         date_modified_cnt = event.widget.current() + 1
+    player.delete()
     player.pause()
     selected_value = search_song.get()
     selected_file_path = selected_value.split("#|#")[1]
@@ -705,14 +740,14 @@ def search_play_song(event=None):
 
 
 def search(event=None):
-    global previous_search_term, date_modified_list, alphabetical_list, date_modified_flag
+    global date_modified_list, alphabetical_list, date_modified_flag
     search_term = search_box.get().strip().lower()
     if search_term == '':
         drop_down['values'] = tuple(date_modified_list) if date_modified_flag else tuple(alphabetical_list)
         drop_down.selection_clear()
         drop_down.focus()
         drop_down.event_generate("<Down>")
-    elif search_term != previous_search_term:
+    else:
         search_results = [f"{os.path.basename(item)}#|#{item}" for item in dir_musics if search_term in item.lower()]
         if not search_results:
             search_results = ["No items match your search"]
@@ -720,14 +755,12 @@ def search(event=None):
         drop_down.selection_clear()
         drop_down.focus()
         drop_down.event_generate("<Down>")
-    previous_search_term = search_term
 
 
 def on_entry_click(event=None):
     if search_box.get() == 'Press Enter To Search':
         search_box.delete(0, "end")  # Remove the placeholder text
         search_box.configure(foreground='White')  # Change text color to #121212
-
 
 def on_entry_leave(event=None):
     if search_box.get() == '':
@@ -741,12 +774,12 @@ def directoryBoxThread():
         directory_thread.daemon = True
         directory_thread.start()
 
-
 def refreshBtnAction():
-    global number_of_files, on_close, date_modified_list, date_modified_flag
+    global number_of_files, on_close, date_modified_list, date_modified_flag, alphabetical_list, dir_musics
     number_of_files = 0
     refresh_btn.configure(text="Refreshing...", state="disabled")
     date_modified_list = []
+    alphabetical_list = []
     dir_musics = []
     directories = [d.strip() for d in directory_box.get("1.0", END).split(",") if d.strip()]
     for Directory in directories:
@@ -767,53 +800,152 @@ def refreshThreadAction():
 def set_focus(event):
     if event.widget == root:
         root.focus_set()
-def readData():
-    global Directory, drop_down, number_of_files, on_close, date_modified_list
-    if not os.path.exists(data_file):
-        with open(data_file, 'w', encoding='utf-8') as f:
-            f.write('0')
-            return
-    with open(data_file, 'r', encoding='utf-8') as f:
-        number_of_files = f.readline().strip()
-        if number_of_files != '':
-            number_of_files = int(number_of_files)
-            if number_of_files > 0:
-                Directory = ''
-                Directory += f.readline().strip()
-                alphabetical_list = []
-                for line in f:
-                    line = line.strip()
-                    if line == 'DateModifiedStart' or on_close or line == '':
-                        break
-                    if line:
-                        dir_musics.append(line)
-                        file_name = os.path.basename(line)
-                        alphabetical_list.append(f"{file_name}#|#{line}")
-                if on_close:
-                    return
-                date_modified_list = [line.strip() for line in f]
-                play_thread = threading.Thread(target=threadAction)
-                play_thread.daemon = True
-                play_thread.start() 
-                rememberPathBtnAction()
-                directory_box.config(state=NORMAL)
-                directory_box.insert(END, Directory)
-                directory_box.config(state=DISABLED)
-                if float(len(Directory))*12.4181818182 > (root.winfo_width()):
-                    directory_box.config(height=2)
-                    refresh_btn.place(rely=0.41)
-                drop_down['values'] = tuple(alphabetical_list)
-            else:
-                root.deiconify()
-                root.lift()
-                root.focus_force()
-        else:
-            root.deiconify()
-            root.lift()
-            root.focus_force()
 
-read_data_thread = threading.Thread(target=readData)
-read_data_thread.daemon = True
+def hotkeys():
+    global hotkey_flag
+    if hotkey_flag:
+        hotkey_flag = False
+        menu_items[7] = pystray.MenuItem('Hotkeys: Off', on_click)
+        icon.menu = pystray.Menu(*menu_items)
+        hotkey_btn.configure(text="Hotkeys: Off")
+    else:
+        hotkey_flag = True
+        menu_items[7] = pystray.MenuItem('Hotkeys: On', on_click)
+        icon.menu = pystray.Menu(*menu_items)
+        hotkey_btn.configure(text="Hotkeys: On")
+        mediaKeysThread = threading.Thread(target=checkMediaKeys)
+        mediaKeysThread.daemon = True
+        mediaKeysThread.start()
+
+def on_click(icon, item):
+    global on_close
+    if on_close:
+        icon.stop()
+        return
+    if item.text == 'Quit':
+        on_close = True
+        icon.stop()
+        return
+    elif item.text == 'Play/Pause':
+        playBtnAction()
+    elif item.text == 'Next Track':
+        forwardBtnAction()
+    elif item.text == 'Previous Track':
+        previousBtnAction()
+    elif item.text == 'True Shuffle: On' or item.text == 'True Shuffle: Off':
+        trueShuffle()
+    elif item.text == 'Repeat: On' or item.text == 'Repeat: Off':
+        autoRepeat()
+    elif item.text == 'Autoplay: On' or item.text == 'Autoplay: Off':
+        autoPlay()
+    elif item.text == 'Hotkeys: On' or item.text == 'Hotkeys: Off':
+        hotkeys()
+
+def showRoot(icon=None, item=None):
+    if root.state() == 'normal':
+        root.withdraw()
+    else:
+        root.deiconify()
+        root.lift()
+        root.focus_force()
+
+
+icon = pystray.Icon(icon=PIL.Image.open(os.path.join(os.path.dirname(
+        os.path.abspath(__file__)), 'resurrection.ico')), name = 'True Music', title="True Music")
+
+menu_items = [
+    pystray.MenuItem('Show/Hide', action=showRoot, default=True),
+    pystray.MenuItem('True Shuffle: On', on_click),
+    pystray.MenuItem('Repeat: Off', on_click),
+    pystray.MenuItem('Autoplay: On', on_click),
+    pystray.MenuItem('Next Track', on_click),
+    pystray.MenuItem('Play/Pause', on_click),
+    pystray.MenuItem('Previous Track', on_click),
+    pystray.MenuItem('Hotkeys: Off', on_click),
+    pystray.MenuItem('Quit', on_click),
+]
+
+def pystrayTray():
+    global icon, shuffle_flag
+    icon.menu = pystray.Menu(*menu_items)
+    try:
+        icon.run()
+    except:
+        return
+    onClosing()
+    return
+
+
+
+hotkey_flag = False
+
+def checkMediaKeys():
+    global on_close, hotkey_flag
+    if on_close:
+        return
+    def on_press(key):
+        try:
+            if not hotkey_flag:
+                listener.stop()
+                return
+            if key == keyboard.Key.media_play_pause:
+                playBtnAction()
+            elif key == keyboard.Key.media_previous:
+                previousBtnAction()
+            elif key == keyboard.Key.media_next:
+                forwardBtnAction()
+            elif key == keyboard.Key.media_volume_mute:
+                muteBtnAction()
+        except AttributeError:
+            pass
+    with keyboard.Listener(on_press=on_press) as listener:
+            listener.join()
+    return 
+
+
+def onMinimize(event):
+    root.withdraw()
+
+def onClosing():
+    global on_close, Directory, icon
+    Directory = root.call(directory_box, 'get', '1.0', 'end-1c')
+    store_path_thread.start()
+    on_close = True
+    try:
+        icon.stop()
+        played.clear()
+        player.pause()
+        pyglet.app.exit()
+        root.destroy()
+    except Exception as e:
+        os.kill(os.getpid(), 9)
+
+
+root = Tk()
+root.minsize(200, 50)
+root.geometry(f"{root.winfo_screenwidth()//2}x{root.winfo_screenheight()//2}")
+root.configure(background="#121212")
+root.title("True Music")
+root.withdraw()
+
+is_windows = os.name == 'nt'
+
+try:
+    if is_windows:
+        root.iconbitmap(os.path.join(os.path.dirname(
+            os.path.abspath(__file__)), 'resurrection.ico'))
+    else:
+        root.iconbitmap('@'+os.path.join(os.path.dirname(
+            os.path.abspath(__file__)), 'trueShuffle.xbm'))
+except:
+    messagebox.showerror('Iconbitmap icon not found',
+                         'Window Icon Cannot be loaded')
+
+# Heading
+title = Label(root, text="True Music ~ HauseMaster", font=("Corbel", 13))
+title.place(relx=0.5, rely=0.1, anchor=CENTER)
+title.configure(background="#121212", foreground="#f0f0f0")
+
 
 # Style
 style = ttk.Style()
@@ -832,7 +964,6 @@ myTip4 = CreateToolTip(clear_btn, "Clear all the files in the directory "
                        "and Search Box and Current Queue")  # noqa
 
 
-
 remember_btn = Button(root, text="Store Path: Disabled",
                       command=rememberPathBtnAction, padx=6, font=("Corbel", 10))
 
@@ -843,9 +974,7 @@ myTip2 = CreateToolTip(remember_btn, "Store the path of the folder you selected 
                        "it will be autoplay next time you open the app")  # noqa
 
 
-
 date_modified_flag = False
-
 
 
 date_modified_btn = Button(root, text="Date Modified: Disabled",
@@ -877,10 +1006,8 @@ directory_box.configure(highlightcolor='lightblue', highlightthickness=1,
 directory_box.place(relwidth=0.65, relx=0.51, rely=0.5, anchor=CENTER)
 
 
-
 Directory.replace("/", "//")
 
-previous_search_term = ''
 
 search_box = Entry(root, foreground='gray',
                    background='#3f3f40', bd=1, relief=GROOVE)
@@ -893,14 +1020,12 @@ search_box.bind("<FocusIn>", on_entry_click)
 search_box.bind("<FocusOut>", on_entry_leave)
 
 
-
 try:
     arrow_lbl = Label(root, text='⇌', font=('Corbel', 14))
     arrow_lbl.configure(background='#121212', foreground='White')
     arrow_lbl.place(anchor=CENTER, relx=0.33, rely=0.67)
 except:
     pass
-
 
 
 search_song = StringVar()
@@ -918,10 +1043,12 @@ music_bar.bind('<Button-1>', seek_tap)
 music_bar.place(relx=0.5, rely=0.2, anchor=CENTER, relwidth=0.33)
 music_bar.state(['disabled'])
 
+read_data_thread = threading.Thread(target=readData)
+read_data_thread.daemon = True
+read_data_thread.start()
+
 
 directory_box_flag = False
-
-
 
 
 selectDirectory = Button(root, text="Select Music Folder", command=directoryBoxThread,
@@ -949,12 +1076,12 @@ refresh_btn.configure(background='#121212', foreground='white',
 
 refresh_btn.place(relx=0.19, rely=0.43,  anchor=W)
 myTip3 = CreateToolTip(refresh_btn, "Refresh Music List"
-                       "and Search Box")
+                       " and Search Box")
 
 volume_bar = ttk.Scale(root, from_=0, to=100, orient=VERTICAL,
                        style='myStyle.Vertical.TScale', cursor='right_ptr')
 volume_bar.set(0)
-volume_bar.bind('<Button-1>', on_volume_change)
+# volume_bar.bind('<Button-1>', on_volume_change)
 volume_bar.bind('<ButtonRelease-1>', on_volume_change)
 volume_bar.place(relx=0.85, rely=0.19, anchor=W, relheight=0.25)
 
@@ -1011,21 +1138,8 @@ theme_btn.configure(background='#121212', foreground='white', activebackground='
 theme_btn.place(anchor=W, relx=0.01, rely=0.1, relheight=0.11, relwidth=0.11)
 
 
-def hotkeys():
-    global hotkey_flag
-    if hotkey_flag:
-        hotkey_flag = False
-        menu_items[7] = pystray.MenuItem('Hotkeys: Off', on_click)
-        icon.menu = pystray.Menu(*menu_items)
-        hotkey_btn.configure(text="Hotkeys: Off")
-    else:
-        hotkey_flag = True
-        menu_items[7] = pystray.MenuItem('Hotkeys: On', on_click)
-        icon.menu = pystray.Menu(*menu_items)
-        hotkey_btn.configure(text="Hotkeys: On")
-        mediaKeysThread = threading.Thread(target=checkMediaKeys)
-        mediaKeysThread.daemon = True
-        mediaKeysThread.start()
+
+
 
 hotkey_btn = Button(root, text="Hotkeys: Off",
                    command=hotkeys, font=("Corbel", 10))
@@ -1089,127 +1203,9 @@ trueShuffle_btn.bind("<Leave>", on_leave_shuffle)
 trueShuffle_btn.place(relx=0.99, rely=0.5, anchor=E,
                       relwidth=0.15, relheight=0.15)
 
-
-def on_click(icon, item):
-    global on_close
-    if on_close:
-        icon.stop()
-        return
-    if item.text == 'Quit':
-        on_close = True
-        icon.stop()
-        return
-    elif item.text == 'Play/Pause':
-        playBtnAction()
-    elif item.text == 'Next Track':
-        forwardBtnAction()
-    elif item.text == 'Previous Track':
-        previousBtnAction()
-    elif item.text == 'True Shuffle: On' or item.text == 'True Shuffle: Off':
-        trueShuffle()
-    elif item.text == 'Repeat: On' or item.text == 'Repeat: Off':
-        autoRepeat()
-    elif item.text == 'Autoplay: On' or item.text == 'Autoplay: Off':
-        autoPlay()
-    elif item.text == 'Hotkeys: On' or item.text == 'Hotkeys: Off':
-        hotkeys()
-
-def showRoot(icon=None, item=None):
-    if root.state() == 'normal':
-        root.withdraw()
-    else:
-        root.deiconify()
-        root.lift()
-        root.focus_force()
-
-
-icon = pystray.Icon(icon=PIL.Image.open(os.path.join(os.path.dirname(
-        os.path.abspath(__file__)), 'resurrection.ico')), name = 'True Music', title="True Music")
-
-menu_items = [
-    pystray.MenuItem('Show/Hide', action=showRoot, default=True),
-    pystray.MenuItem('True Shuffle: On', on_click),
-    pystray.MenuItem('Repeat: Off', on_click),
-    pystray.MenuItem('Autoplay: On', on_click),
-    pystray.MenuItem('Next Track', on_click),
-    pystray.MenuItem('Play/Pause', on_click),
-    pystray.MenuItem('Previous Track', on_click),
-    pystray.MenuItem('Hotkeys: Off', on_click),
-    pystray.MenuItem('Quit', on_click),
-]
-
-def pystrayTray():
-    global icon, shuffle_flag
-    icon.menu = pystray.Menu(*menu_items)
-    try:
-        icon.run()
-    except:
-        return
-    onClosing()
-    return
-
-is_windows = os.name == 'nt'
-
-try:
-    if is_windows:
-        root.iconbitmap(os.path.join(os.path.dirname(
-            os.path.abspath(__file__)), 'resurrection.ico'))
-    else:
-        root.iconbitmap('@'+os.path.join(os.path.dirname(
-            os.path.abspath(__file__)), 'trueShuffle.xbm'))
-except:
-    messagebox.showerror('Iconbitmap icon not found',
-                         'Window Icon Cannot be loaded')
-
-hotkey_flag = False
-
-def checkMediaKeys():
-    global on_close, hotkey_flag
-    if on_close:
-        return
-    def on_press(key):
-        try:
-            if not hotkey_flag:
-                listener.stop()
-                return
-            if key == keyboard.Key.media_play_pause:
-                playBtnAction()
-            elif key == keyboard.Key.media_previous:
-                previousBtnAction()
-            elif key == keyboard.Key.media_next:
-                forwardBtnAction()
-            elif key == keyboard.Key.media_volume_mute:
-                muteBtnAction()
-        except AttributeError:
-            pass
-    with keyboard.Listener(on_press=on_press) as listener:
-            listener.join()
-    return 
-
-
-def onMinimize(event):
-    root.withdraw()
-
-def onClosing():
-    global on_close, Directory, icon
-    # Directory = directory_box.get("1.0", END)
-    Directory = root.call(directory_box, 'get', '1.0', 'end-1c')
-    store_path_thread.start()
-    on_close = True
-    try:
-        icon.stop()
-        played.clear()
-        player.pause()
-        pyglet.app.exit()
-        root.destroy()
-    except Exception as e:
-        os.kill(os.getpid(), 9)
-
-
 SystemTrayThread = threading.Thread(target=pystrayTray)
 SystemTrayThread.daemon = True
 SystemTrayThread.start()
-
 
 
 root.bind("<KeyPress>", on_key_press)
@@ -1218,5 +1214,4 @@ root.bind("<Configure>", updateSize)
 root.protocol("WM_DELETE_WINDOW", onClosing)
 root.bind("<Unmap>", onMinimize)
 root.bind("<Button-1>", set_focus)
-read_data_thread.start()
 root.mainloop()
