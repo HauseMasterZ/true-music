@@ -430,7 +430,6 @@ def clearDirectory():
     drop_down['values'] = ('',)
     alphabetical_list = []
     date_modified_list = []
-    root.focus_set()
     directory_box.config(state=NORMAL)
     directory_box.delete("1.0", END)
     directory_box.config(state=DISABLED)
@@ -693,7 +692,6 @@ def update_seekbar():
     if on_close:
         return
     if player.playing and player.source:
-        icon.title = file_name[:65]
         current_time = player.time
         total_time = player.source.duration
         if current_time > total_time:
