@@ -14,7 +14,7 @@ That is why this music player exists, This app generates secure random numbers t
 
 
 # INSTALLATION
-For cloning, Dependencies in requirements.txt
+For cloning, Dependencies in requirements.txt.
 
 
 ``` pip install -r requirements.txt ```
