@@ -197,7 +197,12 @@ def secure_generator(prev_flag=False, search_file=None):
         prev_corrupt_flag = True
         player.next_source()
         return None
-    player.queue(media)
+    player.delete()
+    
+    try:
+        player.queue(media)
+    except:
+        return None
     if not prev_corrupt_flag and not first_flag:
         player.next_source()
     else:
@@ -504,15 +509,21 @@ def playBtnAction(event=None):
 # forward button action
 def forwardBtnAction():
     try:
+        player.delete()
         player.seek(0)
+        player.pause()
     except:
         return
     threadAction()    
 
 # backward button action
 def previousBtnAction():
-    player.delete()
-    player.seek(0)
+    try:
+        player.delete()
+        player.seek(0)
+        player.pause()
+    except:
+        return
     threadAction(True)
 
 # on play end
@@ -559,9 +570,9 @@ def threadAction(prev_flag=False, search_file=None):
                 name = date_modified_list[date_modified_cnt].split('#|#')[-1]
                 file_name = secure_generator(prev_flag, name)
             else:
-                name = date_modified_list[max(0, date_modified_cnt-2)].split('#|#')[-1]
+                date_modified_cnt = max(0, date_modified_cnt-2)
+                name = date_modified_list[date_modified_cnt].split('#|#')[-1]
                 file_name = secure_generator(False, name)
-                date_modified_cnt -= 2
             date_modified_cnt += 1
         else:
             file_name = secure_generator(prev_flag, search_file)
@@ -574,7 +585,6 @@ def threadAction(prev_flag=False, search_file=None):
     now_playing.configure(text=f'Now playing: {file_name[:75]}')
     try:
         icon.title = file_name[:75] if file_name else 'True Music'
-        player.delete()
         player.seek(0.0)
         player.play()
     except:
@@ -1136,9 +1146,6 @@ theme_btn.configure(background='#121212', foreground='white', activebackground='
 theme_btn.place(anchor=W, relx=0.01, rely=0.1, relheight=0.11, relwidth=0.11)
 
 
-
-
-
 hotkey_btn = Button(root, text="Hotkeys: Off",
                    command=hotkeys, font=("Corbel", 10))
 hotkey_btn.configure(background='#121212', foreground='white', activebackground='#121212',
@@ -1201,9 +1208,6 @@ trueShuffle_btn.bind("<Leave>", on_leave_shuffle)
 trueShuffle_btn.place(relx=0.99, rely=0.5, anchor=E,
                       relwidth=0.15, relheight=0.15)
 
-SystemTrayThread = threading.Thread(target=pystrayTray)
-SystemTrayThread.daemon = True
-SystemTrayThread.start()
 
 
 root.bind("<KeyPress>", on_key_press)
@@ -1212,4 +1216,8 @@ root.bind("<Configure>", updateSize)
 root.protocol("WM_DELETE_WINDOW", onClosing)
 root.bind("<Unmap>", onMinimize)
 root.bind("<Button-1>", set_focus)
+
+SystemTrayThread = threading.Thread(target=pystrayTray)
+SystemTrayThread.daemon = True
+SystemTrayThread.start()
 root.mainloop()
