@@ -9,16 +9,15 @@ from tkinter import ttk
 import pyglet
 import pystray
 import PIL.Image
+import json
 
-
-
-
+data_file = os.path.join(os.path.dirname(
+    os.path.abspath(__file__)), 'data.json')
 Directory = ""
 dir_musics = []
 number_of_files = 0
 remember_flag = False
 secretsGenerator = secrets.SystemRandom()
-
 
 # Functions
 class CreateToolTip(object):
@@ -198,7 +197,6 @@ def secure_generator(prev_flag=False, search_file=None):
         player.next_source()
         return None
     player.delete()
-    
     try:
         player.queue(media)
     except:
@@ -252,8 +250,6 @@ def alwaysOnTop():
         always_on_top_flag = True
         always_on_top_btn.configure(
             text="Always On Top: Enabled", relief=SUNKEN)
-
-
 
 # Shuffle Button
 def trueShuffle():
@@ -320,7 +316,6 @@ def get_all_files(folder_path):
     except PermissionError:
         return [], -1
     return all_files, file_count
-
 
 alphabetical_list = []
 date_modified_list = []
@@ -392,9 +387,7 @@ def loadMusicThread():
     directory_box.config(state=NORMAL)
     directory_box.insert(END, Directory + ', ')
     directory_box.config(state=DISABLED)
-    if float(len(directory_box.get('0.0', 'end-1c')))*12.4181818182 > (root.winfo_width()):
-        directory_box.config(height=2)
-        refresh_btn.place(rely=0.41)
+    changeDirectoryBoxHeight()
 
 # date modified sort
 def loadDateModified(all_paths):
@@ -407,15 +400,12 @@ def loadDateModified(all_paths):
     date_modified_list = merge_sorted_lists(date_modified_list, tmp, date=True)
     if on_close:
         return
-    if date_modified_flag:
-        drop_down['values'] = tuple(date_modified_list)
-        return
     tmp = []
     for file_path in all_paths:
         file_name = os.path.basename(file_path)
         tmp.append(f"{file_name}#|#{file_path}")
     alphabetical_list = merge_sorted_lists(alphabetical_list, tmp)
-    drop_down['values'] = tuple(alphabetical_list)
+    drop_down['values'] = tuple(alphabetical_list) if not date_modified_flag else tuple(date_modified_list)
 
 
 clear_flag = False
@@ -427,8 +417,6 @@ def clearDirectory():
     dir_musics.clear()
     search_box.insert(0, 'Press Enter To Search')
     search_box.configure(foreground='Gray')
-    directory_box.config(height=1)
-    refresh_btn.place(rely=0.43)
     drop_down.set('All Music Files appear here')
     drop_down.configure(foreground='Gray')
     played.clear()
@@ -438,6 +426,7 @@ def clearDirectory():
     directory_box.config(state=NORMAL)
     directory_box.delete("1.0", END)
     directory_box.config(state=DISABLED)
+    changeDirectoryBoxHeight()
     clear_flag = True
     number_of_files = 0
     icon.title = "True Music"
@@ -459,14 +448,15 @@ def storePath():
     global number_of_files, data_file, Directory
     with open(data_file, 'w', encoding='utf-8') as f:
         if remember_flag and not first_flag:
-            f.write(f'{number_of_files} \n')
-            f.write(Directory)
-            f.write('\n')
-            f.writelines('\n'.join(dir_musics))
-            f.writelines('\nDateModifiedStart\n')
-            f.writelines('\n'.join(date_modified_list))
+            data = {
+                "number_of_files": number_of_files,
+                "Directory": Directory,
+                "file_paths": dir_musics,
+                "date_modified_names": date_modified_list
+            }
+            json.dump(data, f)
         else:
-            f.write('0')
+            writeEmptyData()
 
 # Size Update Function
 def updateSize(event):
@@ -593,54 +583,62 @@ def threadAction(prev_flag=False, search_file=None):
     secs = (track_length % 60)
     length_of_music.configure(text=f'{mins}:{secs:02d}')
 
+def writeEmptyData():
+    global data_file
+    with open(data_file, 'w', encoding='utf-8') as f:
+        data = {
+            "number_of_files": 0,
+            "Directory": '',
+            "file_paths": [],
+            "date_modified_names": []
+        }
+        json.dump(data, f)
+
+def changeDirectoryBoxHeight():
+    global directory_box_flag
+    if directory_box_flag:
+        return
+    if float(len(directory_box.get('0.0', 'end-1c')))*12.4181818182 > (root.winfo_width()):
+        directory_box.config(height=2)
+        refresh_btn.place(rely=0.41)
+    else:
+        directory_box.config(height=1)
+        refresh_btn.place(rely=0.43)
+
 # data file path modify here
-data_file = os.path.join(os.path.dirname(
-    os.path.abspath(__file__)), 'data.txt')
 def readData():
-    global Directory, drop_down, number_of_files, on_close, date_modified_list
-    if not os.path.exists(data_file):
-        with open(data_file, 'w', encoding='utf-8') as f:
-            f.write('0')
-            return
+    global Directory, drop_down, number_of_files, on_close, date_modified_list, dir_musics, alphabetical_list
+    if not os.path.isfile(data_file):
+        writeEmptyData()
+        root.deiconify()
+        root.lift()
+        root.focus_force()
+        return
     with open(data_file, 'r', encoding='utf-8') as f:
-        number_of_files = f.readline().strip()
-        if number_of_files != '':
-            number_of_files = int(number_of_files)
-            if number_of_files > 0:
-                Directory = ''
-                Directory += f.readline().strip()
-                alphabetical_list = []
-                for line in f:
-                    line = line.strip()
-                    if line == 'DateModifiedStart' or on_close or line == '':
-                        break
-                    if line:
-                        dir_musics.append(line)
-                        file_name = os.path.basename(line)
-                        alphabetical_list.append(f"{file_name}#|#{line}")
-                if on_close:
-                    return
-                play_thread = threading.Thread(target=threadAction)
-                play_thread.daemon = True
-                play_thread.start() 
-                date_modified_list = [line.strip() for line in f]
-                rememberPathBtnAction()
-                directory_box.config(state=NORMAL)
-                directory_box.insert(END, Directory)
-                directory_box.config(state=DISABLED)
-                if float(len(Directory))*12.4181818182 > (root.winfo_width()):
-                    directory_box.config(height=2)
-                    refresh_btn.place(rely=0.41)
-                drop_down['values'] = tuple(alphabetical_list)
-            else:
-                root.deiconify()
-                root.lift()
-                root.focus_force()
+        loaded_data = json.load(f)
+        number_of_files = loaded_data['number_of_files']
+        if number_of_files > 0:
+            dir_musics = loaded_data['file_paths']
+            play_thread = threading.Thread(target=threadAction)
+            play_thread.daemon = True
+            play_thread.start() 
+            if on_close:
+                return
+            for path in dir_musics:
+                file_name = os.path.basename(path)
+                alphabetical_list.append(f"{file_name}#|#{path}")
+            date_modified_list = loaded_data['date_modified_names']
+            Directory = loaded_data['Directory']
+            rememberPathBtnAction()
+            directory_box.config(state=NORMAL)
+            directory_box.insert(END, Directory)
+            directory_box.config(state=DISABLED)
+            changeDirectoryBoxHeight()
+            drop_down['values'] = tuple(alphabetical_list)
         else:
             root.deiconify()
             root.lift()
             root.focus_force()
-
 
 def muteBtnAction(event=None):
     global play_image, play_image_inv
@@ -929,13 +927,13 @@ def onClosing():
         os.kill(os.getpid(), 9)
 
 
+
 root = Tk()
 root.minsize(200, 50)
 root.geometry(f"{root.winfo_screenwidth()//2}x{root.winfo_screenheight()//2}")
 root.configure(background="#121212")
 root.title("True Music")
 root.withdraw()
-
 is_windows = os.name == 'nt'
 
 try:
@@ -1207,8 +1205,6 @@ trueShuffle_btn.bind("<Leave>", on_leave_shuffle)
 
 trueShuffle_btn.place(relx=0.99, rely=0.5, anchor=E,
                       relwidth=0.15, relheight=0.15)
-
-
 
 root.bind("<KeyPress>", on_key_press)
 root.bind("<space>", playBtnAction)
