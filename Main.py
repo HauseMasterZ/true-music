@@ -452,7 +452,6 @@ def storePath():
                 "full_paths": dir_musics,
                 "date_modified_names": date_modified_list
             }
-            # print(data)
             json.dump(data, f)
         else:
             writeEmptyData()
@@ -467,15 +466,13 @@ def updateSize(event):
 
 
 store_path_thread = threading.Thread(target=storePath)
-
+store_path_thread.daemon = True
 file_name = ''
 
 # Play button action
 def playBtnAction(event=None):
     global play_image, pause_image, clear_flag
-    if first_flag:
-        return
-    if clear_flag or (event and root.focus_get() == search_box) :
+    if clear_flag or (event and root.focus_get() == search_box) or player.time > player.source.duration or first_flag:
         return
     if player.playing:
         player.pause()
@@ -524,6 +521,11 @@ def playerEnd():
         player.play()
     elif auto_play_flag:
         threadAction()
+    else:
+        player.pause()
+        play_pause_btn.configure(image=play_image) if theme_btn.cget(
+            'text') == 'Theme: Dark' else play_pause_btn.configure(image=play_image_inv)
+
 
 date_modified_cnt = 0
 
@@ -656,12 +658,14 @@ def on_volume_change(event):
 
 # Seekbar update
 def seek_tap(event):
-    if player.playing:
-        seek_position = event.x / (root.winfo_width()/3)
-        total_time = player.source.duration
-        player.delete()
-        player.seek((seek_position * total_time))
-        player.play()
+    seek_position = event.x / (root.winfo_width()/3)
+    total_time = player.source.duration
+    player.delete()
+    player.seek((seek_position * total_time))
+    if not player.playing:
+        play_pause_btn.configure(image=pause_image) if theme_btn.cget(
+        'text') == 'Theme: Dark' else play_pause_btn.configure(image=pause_image_inv)
+    player.play()
 
 
 # key press
@@ -677,15 +681,23 @@ def on_key_press(event):
     elif root.focus_get() != search_box:
         if event.keysym == "Right":
             try:
-                player.delete()
-                player.seek(player.time+5)
-                player.play()
+                if player.playing:
+                    player.delete()
+                    player.seek(player.time+5)
+                    player.play()
             except:
                 return
         elif event.keysym == "Left":
-            player.delete()
-            player.seek(player.time - 5)
-            player.play()
+            try:
+                if player.playing or player.time >= player.source.duration:
+                    player.delete()
+                    player.seek(player.time - 5)
+                    if not player.playing:
+                        play_pause_btn.configure(image=pause_image) if theme_btn.cget(
+                            'text') == 'Theme: Dark' else play_pause_btn.configure(image=pause_image_inv)
+                    player.play()
+            except:
+                return
         elif event.keysym == "Down":
             drop_down.focus()
         elif event.state & 1 and event.keysym.lower() == "n":
@@ -701,8 +713,7 @@ def update_seekbar():
     if player.playing and player.source:
         current_time = player.time
         total_time = player.source.duration
-        print(current_time, total_time)
-        if current_time > total_time:
+        if current_time >= total_time:
             on_eos = threading.Thread(target=playerEnd)
             on_eos.daemon = True
             on_eos.start()
@@ -918,10 +929,10 @@ def onMinimize(event):
 
 def onClosing():
     global on_close, Directory, icon
-    Directory = root.call(directory_box, 'get', '1.0', 'end-1c')
     store_path_thread.start()
-    on_close = True
     try:
+        Directory = root.call(directory_box, 'get', '1.0', 'end-1c')
+        on_close = True
         icon.stop()
         played.clear()
         player.pause()
