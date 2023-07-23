@@ -301,14 +301,12 @@ audio_set = ('.m4a', '.mp3', '.aac', '.flac', '.wav', '.ogg', '.wma')
 # Function to get all the files in the directory including the subdirectories
 def get_all_files(folder_path):
     global on_close, clear_flag
-    if on_close:
-        return [], 0
     all_files = []
     file_count = 0
     try:
         for root, dirs, files in os.walk(folder_path):
             for file in files:
-                if on_close or clear_flag:
+                if clear_flag:
                     return [], 0
                 if file.endswith(audio_set):
                     all_files.append(os.path.join(root, file))
@@ -398,14 +396,13 @@ def loadDateModified(all_paths):
             file_name = os.path.basename(file_path)
             tmp.append(f"{file_name}#|#{file_path}")
     date_modified_list = merge_sorted_lists(date_modified_list, tmp, date=True)
-    if on_close:
-        return
     tmp = []
     for file_path in all_paths:
         file_name = os.path.basename(file_path)
         tmp.append(f"{file_name}#|#{file_path}")
     alphabetical_list = merge_sorted_lists(alphabetical_list, tmp)
-    drop_down['values'] = tuple(alphabetical_list) if not date_modified_flag else tuple(date_modified_list)
+    if not on_close:
+        drop_down['values'] = tuple(alphabetical_list) if not date_modified_flag else tuple(date_modified_list)
 
 
 clear_flag = False
@@ -446,14 +443,16 @@ def rememberPathBtnAction():
 # Store Path
 def storePath():
     global number_of_files, data_file, Directory
+    refreshBtnAction(Directory)
     with open(data_file, 'w', encoding='utf-8') as f:
         if remember_flag and not first_flag:
             data = {
                 "number_of_files": number_of_files,
                 "Directory": Directory,
-                "file_paths": dir_musics,
+                "full_paths": dir_musics,
                 "date_modified_names": date_modified_list
             }
+            # print(data)
             json.dump(data, f)
         else:
             writeEmptyData()
@@ -546,7 +545,6 @@ def threadAction(prev_flag=False, search_file=None):
         seekbar_thread = threading.Thread(target=update_seekbar)
         seekbar_thread.daemon = True
         seekbar_thread.start()
-        music_bar.state(['!disabled'])
         file_name = secure_generator(prev_flag, search_file)
         first_flag = False
         if corrupt_flag or file_name is None:
@@ -569,6 +567,7 @@ def threadAction(prev_flag=False, search_file=None):
         if corrupt_flag or file_name is None:
             music_bar.state(['disabled'])
             return
+    music_bar.state(['!disabled'])
     play_pause_btn.configure(image=pause_image) if theme_btn.cget(
     'text') == 'Theme: Dark' else play_pause_btn.configure(image=pause_image_inv)
     track_length = int(player.source.duration)
@@ -589,7 +588,7 @@ def writeEmptyData():
         data = {
             "number_of_files": 0,
             "Directory": '',
-            "file_paths": [],
+            "full_paths": [],
             "date_modified_names": []
         }
         json.dump(data, f)
@@ -608,37 +607,37 @@ def changeDirectoryBoxHeight():
 # data file path modify here
 def readData():
     global Directory, drop_down, number_of_files, on_close, date_modified_list, dir_musics, alphabetical_list
-    if not os.path.isfile(data_file):
+    try:
+        with open(data_file, 'r', encoding='utf-8') as f:
+            loaded_data = json.load(f)
+            number_of_files = loaded_data['number_of_files']
+            if number_of_files > 0:
+                dir_musics = loaded_data['full_paths']
+                play_thread = threading.Thread(target=threadAction)
+                play_thread.daemon = True
+                play_thread.start() 
+                if on_close:
+                    return
+                for path in dir_musics:
+                    file_name = os.path.basename(path)
+                    alphabetical_list.append(f"{file_name}#|#{path}")
+                date_modified_list = loaded_data['date_modified_names']
+                Directory = loaded_data['Directory']
+                rememberPathBtnAction()
+                directory_box.config(state=NORMAL)
+                directory_box.insert(END, Directory)
+                directory_box.config(state=DISABLED)
+                changeDirectoryBoxHeight()
+                drop_down['values'] = tuple(alphabetical_list)
+            else:
+                root.deiconify()
+                root.lift()
+                root.focus_force()
+    except:
         writeEmptyData()
         root.deiconify()
         root.lift()
         root.focus_force()
-        return
-    with open(data_file, 'r', encoding='utf-8') as f:
-        loaded_data = json.load(f)
-        number_of_files = loaded_data['number_of_files']
-        if number_of_files > 0:
-            dir_musics = loaded_data['file_paths']
-            play_thread = threading.Thread(target=threadAction)
-            play_thread.daemon = True
-            play_thread.start() 
-            if on_close:
-                return
-            for path in dir_musics:
-                file_name = os.path.basename(path)
-                alphabetical_list.append(f"{file_name}#|#{path}")
-            date_modified_list = loaded_data['date_modified_names']
-            Directory = loaded_data['Directory']
-            rememberPathBtnAction()
-            directory_box.config(state=NORMAL)
-            directory_box.insert(END, Directory)
-            directory_box.config(state=DISABLED)
-            changeDirectoryBoxHeight()
-            drop_down['values'] = tuple(alphabetical_list)
-        else:
-            root.deiconify()
-            root.lift()
-            root.focus_force()
 
 def muteBtnAction(event=None):
     global play_image, play_image_inv
@@ -780,14 +779,16 @@ def directoryBoxThread():
         directory_thread.daemon = True
         directory_thread.start()
 
-def refreshBtnAction():
+def refreshBtnAction(given_directory=None):
     global number_of_files, on_close, date_modified_list, date_modified_flag, alphabetical_list, dir_musics
     number_of_files = 0
-    refresh_btn.configure(text="Refreshing...", state="disabled")
     date_modified_list = []
     alphabetical_list = []
     dir_musics = []
-    directories = [d.strip() for d in directory_box.get("1.0", END).split(",") if d.strip()]
+    if not given_directory:
+        directories = [d.strip() for d in directory_box.get("1.0", END).split(",") if d.strip()]
+    else:
+        directories = [d.strip() for d in given_directory.split(',') if d.strip()]
     for Directory in directories:
         tmp, tmp_num = get_all_files(Directory)
         dir_musics = merge_sorted_lists(dir_musics, tmp)
@@ -795,10 +796,12 @@ def refreshBtnAction():
         number_of_files += tmp_num
     if not on_close:
         refresh_btn.configure(text="Refresh", state="normal")
+    return
 
 def refreshThreadAction():
     global directory_box_flag
     if not directory_box_flag:
+        refresh_btn.configure(text="Refreshing...", state="disabled")
         refresh_thread = threading.Thread(target=refreshBtnAction)
         refresh_thread.daemon = True
         refresh_thread.start()
