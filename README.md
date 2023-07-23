@@ -2,7 +2,7 @@
 # TrueMusic
 
 <p align="center">
-  <img src="https://github.com/HauseMasterZ/true-music/assets/113833707/907b247e-5f35-4b13-ac60-26cd5edc519f" alt="Home Page"/>
+  <img src="https://github.com/HauseMasterZ/true-music/assets/113833707/ba7c10ab-4569-4c7a-9db2-7b6682d9bcc7" alt="Home Page"/>
 </p>
 
 

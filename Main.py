@@ -92,8 +92,8 @@ def changeTheme():
                                  activebackground='White')
         forward_btn.configure(image=forward_image_inv)
         previous_btn.configure(image=previous_image_inv)
-        date_modified_btn.configure(background='White', foreground='Black')
-        refresh_btn.configure(background='White', foreground='Black',)
+        date_modified_btn.configure(background='White', foreground='Black', activebackground='White', activeforeground='gray')
+        refresh_btn.configure(background='White', foreground='Black',activebackground='White', activeforeground='gray')
         previous_btn.configure(background='White',
                                borderwidth=0, activebackground='#b3afaf')
         forward_btn.configure(background='White', activebackground='#b3afaf')
@@ -113,8 +113,8 @@ def changeTheme():
         selectDirectory.configure(background='White', foreground='Black',activebackground='White')
         trueShuffle_btn.configure(background='White', foreground='Black' if not shuffle_flag else "#2dd128",activebackground='White')
     else:
-        date_modified_btn.configure(background='#121212', foreground='White')
-        refresh_btn.configure(background='#121212', foreground='White')
+        date_modified_btn.configure(background='#121212', foreground='White', activebackground='#121212', activeforeground='Grey')
+        refresh_btn.configure(background='#121212', foreground='White', activebackground='#121212', activeforeground='Grey')
         root.configure(background='#121212')
         arrow_lbl.configure(background='#121212', foreground='White')
         title.configure(background="#121212", foreground="White")
@@ -695,12 +695,13 @@ def on_key_press(event):
 
 # Update seekbar
 def update_seekbar():
-    global on_close, is_windows, file_name
+    global on_close, file_name
     if on_close:
         return
     if player.playing and player.source:
         current_time = player.time
         total_time = player.source.duration
+        print(current_time, total_time)
         if current_time > total_time:
             on_eos = threading.Thread(target=playerEnd)
             on_eos.daemon = True
