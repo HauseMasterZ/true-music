@@ -404,7 +404,6 @@ def loadDateModified(all_paths):
     if not on_close:
         drop_down['values'] = tuple(alphabetical_list) if not date_modified_flag else tuple(date_modified_list)
 
-
 clear_flag = False
 
 # Clear Directory
@@ -439,7 +438,6 @@ def rememberPathBtnAction():
     remember_flag = not remember_flag
 
 
-
 # Store Path
 def storePath():
     global number_of_files, data_file, Directory
@@ -463,7 +461,6 @@ def updateSize(event):
         font=("Corbel", (root.winfo_width() + root.winfo_height()) // 50))
     now_playing.configure(font=("Aerial", (root.winfo_width() +
                                            root.winfo_height()) // 100)) 
-
 
 store_path_thread = threading.Thread(target=storePath)
 store_path_thread.daemon = True
@@ -744,7 +741,7 @@ def date_modified_btn_action():
 
 
 def search_play_song(event=None):
-    if search_song.get().strip() == 'No items match your search':
+    if search_song.get().strip() == 'No items match your search' or not search_song.get().strip():
         return # If search box is empty, do nothing
     global date_modified_cnt, date_modified_flag
     if date_modified_flag:
@@ -891,11 +888,11 @@ def pystrayTray():
     icon.menu = pystray.Menu(*menu_items)
     try:
         icon.run()
+        # icon.run_detached()
     except:
         return
     onClosing()
     return
-
 
 
 hotkey_flag = False
@@ -940,7 +937,6 @@ def onClosing():
         root.destroy()
     except Exception as e:
         os.kill(os.getpid(), 9)
-
 
 
 root = Tk()
@@ -991,8 +987,8 @@ remember_btn = Button(root, text="Store Path: Disabled",
 remember_btn.configure(background='#121212', foreground='white',
                        activebackground='#121212', relief="sunken", borderwidth=0, activeforeground='grey')
 remember_btn.place(relx=0.19, rely=0.58,  anchor=W)
-myTip2 = CreateToolTip(remember_btn, "Store the path of the folder you selected and"
-                       "it will be autoplay next time you open the app")  # noqa
+myTip2 = CreateToolTip(remember_btn, "Store the path of the folder you selected and "
+                       "autoplay next time app is opened")  # noqa
 
 
 date_modified_flag = False
@@ -1040,7 +1036,6 @@ search_box.bind("<Return>", search)
 search_box.bind("<FocusIn>", on_entry_click)
 search_box.bind("<FocusOut>", on_entry_leave)
 
-
 try:
     arrow_lbl = Label(root, text='⇌', font=('Corbel', 14))
     arrow_lbl.configure(background='#121212', foreground='White')
@@ -1049,13 +1044,16 @@ except:
     pass
 
 
+
+
 search_song = StringVar()
-drop_down = ttk.Combobox(root, width=27, textvariable=search_song, state='readonly')
+drop_down = ttk.Combobox(root, width=27, textvariable=search_song, state='readonly', takefocus=False, exportselection=False)
 drop_down.place(anchor=E, relx=0.85, rely=0.67, relwidth=0.5)
 drop_down.configure(foreground='Gray')
 drop_down.set('All Music Files appear here')
 drop_down.bind('<<ComboboxSelected>>', search_play_song)
 drop_down['values'] = ('', )
+
 
 music_bar = ttk.Scale(root, from_=0, to=100, orient=HORIZONTAL,
                       style='myStyle.Horizontal.TScale', cursor='crosshair')
@@ -1089,15 +1087,14 @@ selectDirectory.place(relx=0.01, rely=0.5, anchor=W,
                       relwidth=0.17, relheight=0.15)
 
 
-
 refresh_btn = Button(root, text="Refresh",
                       command=refreshThreadAction, padx=6, font=("Corbel", 10))
 refresh_btn.configure(background='#121212', foreground='white',
                        activebackground='#121212', relief="sunken", borderwidth=0, activeforeground='grey')
 
 refresh_btn.place(relx=0.19, rely=0.43,  anchor=W)
-myTip3 = CreateToolTip(refresh_btn, "Refresh Music List"
-                       " and Search Box")
+myTip3 = CreateToolTip(refresh_btn, "Refresh All the files in the directory"
+                       " and ")
 
 volume_bar = ttk.Scale(root, from_=0, to=100, orient=VERTICAL,
                        style='myStyle.Vertical.TScale', cursor='right_ptr')
@@ -1207,7 +1204,6 @@ previous_btn.configure(relief="sunken", borderwidth=0,
 previous_btn.place(relx=0.05, rely=0.2, anchor=CENTER)
 
 
-
 trueShuffle_btn = Button(root, text="True Shuffle: On",
                          command=trueShuffle, padx=6, pady=6, font=("Corbel", 10))
 trueShuffle_btn.configure(background='#121212',relief="groove", borderwidth=0, activeforeground='grey', activebackground='#121212', foreground='#2dd128')
@@ -1220,6 +1216,7 @@ trueShuffle_btn.bind("<Leave>", on_leave_shuffle)
 
 trueShuffle_btn.place(relx=0.99, rely=0.5, anchor=E,
                       relwidth=0.15, relheight=0.15)
+
 
 root.bind("<KeyPress>", on_key_press)
 root.bind("<space>", playBtnAction)
