@@ -750,7 +750,9 @@ def search_play_song(event=None):
     player.pause()
     selected_value = search_song.get()
     selected_file_path = selected_value.split("#|#")[1]
-    threadAction(False, selected_file_path)
+    play_thread = threading.Thread(target=threadAction, args=(False, selected_file_path))
+    play_thread.daemon = True
+    play_thread.start()
 
 
 def search(event=None):
