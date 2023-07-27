@@ -741,6 +741,7 @@ def date_modified_btn_action():
 
 
 
+
 def search_play_song(event=None):
     if search_song.get().strip() == 'No items match your search' or not search_song.get().strip():
         return # If search box is empty, do nothing
