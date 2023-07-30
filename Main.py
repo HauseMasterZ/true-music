@@ -666,6 +666,7 @@ def seek_tap(event):
     player.play()
 
 
+
 # key press
 def on_key_press(event):
     if event.keysym == "XF86AudioPlay":
