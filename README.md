@@ -6,7 +6,6 @@
 </p>
 
 
-
 Are you annoyed about the fact that almost every shuffle algorithm that every music player uses out there is not trully random, and that It is just a long sequence of songs which eventually get repeated.
 Yeah me too..
 
@@ -18,6 +17,5 @@ For cloning, Dependencies in requirements.txt.
 
 
 ``` pip install -r requirements.txt ```
-
 
 For installing using exe. All dependencies bundled in.
