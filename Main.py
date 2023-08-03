@@ -653,7 +653,6 @@ def on_volume_change(event):
     if player.volume == 0.0:
         muteBtnAction()
 
-
 # Seekbar update
 def seek_tap(event):
     seek_position = event.x / (root.winfo_width()/3)
