@@ -1,5 +1,15 @@
-import os
+def is_program_running(program_name):
+    import psutil
+    for process in psutil.process_iter(['pid', 'name']):
+        if program_name in process.info['name'].lower():
+            return True
+    return False
 from tkinter import messagebox
+if is_program_running("true music"):
+    messagebox.showerror("Error", "True Music is already running.")
+    exit(0)
+
+import os
 from pynput import keyboard
 import threading
 from tkinter import *
@@ -10,6 +20,7 @@ import pyglet
 import pystray
 import PIL.Image
 import json
+
 
 data_file = os.path.join(os.path.dirname(
     os.path.abspath(__file__)), 'data.json')
