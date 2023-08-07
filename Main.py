@@ -1,15 +1,10 @@
-def is_program_running(program_name):
-    import psutil
-    for process in psutil.process_iter(['pid', 'name']):
-        if program_name in process.info['name'].lower():
-            return True
-    return False
-from tkinter import messagebox
-if is_program_running("true music"):
-    messagebox.showerror("Error", "True Music is already running.")
-    exit(0)
-
 import os
+if os.path.exists(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'window.lock')):
+    import sys
+    sys.exit(0)
+with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'window.lock'), "w"):
+    pass
+from tkinter import messagebox
 from pynput import keyboard
 import threading
 from tkinter import *
@@ -20,7 +15,6 @@ import pyglet
 import pystray
 import PIL.Image
 import json
-
 
 data_file = os.path.join(os.path.dirname(
     os.path.abspath(__file__)), 'data.json')
@@ -943,6 +937,7 @@ def onMinimize(event):
 
 def onClosing():
     global on_close, Directory, icon
+    os.remove(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'window.lock'))
     store_path_thread.start()
     try:
         Directory = root.call(directory_box, 'get', '1.0', 'end-1c')
