@@ -16,6 +16,7 @@ import pystray
 import PIL.Image
 import json
 
+
 data_file = os.path.join(os.path.dirname(
     os.path.abspath(__file__)), 'data.json')
 Directory = ""
