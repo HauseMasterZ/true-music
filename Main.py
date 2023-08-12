@@ -1229,7 +1229,6 @@ trueShuffle_btn.bind("<Leave>", on_leave_shuffle)
 trueShuffle_btn.place(relx=0.99, rely=0.5, anchor=E,
                       relwidth=0.15, relheight=0.15)
 
-
 root.bind("<KeyPress>", on_key_press)
 root.bind("<space>", playBtnAction)
 root.bind("<Configure>", updateSize)
