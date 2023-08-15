@@ -89,7 +89,7 @@ def changeTheme():
         theme_btn.configure(text="Theme: Light", background='White',
                             foreground='Black', activebackground='White', activeforeground='gray')
         hotkey_btn.configure(background='White', foreground='Black', activebackground='White', activeforeground='gray')
-        directory_box.configure(background='#c2c1c1', foreground='Black')
+        directory_box.configure(background='#F5F5F5', foreground='Black')
         volume_icon.configure(image=volume_image_inv, background='White')
         play_pause_btn.configure(
             image=pause_image_inv) if player.playing else play_pause_btn.configure(image=play_image_inv)
@@ -115,6 +115,7 @@ def changeTheme():
         autoplay_btn.configure(background='White', foreground='Black',activebackground='White')
         always_on_top_btn.configure(background='White', foreground='Black', activebackground='White')
         repeat_btn.configure(background='White', foreground='Black', activebackground='White')
+        search_box.configure(background='#F5F5F5')
         selectDirectory.configure(background='White', foreground='Black',activebackground='White')
         trueShuffle_btn.configure(background='White', foreground='Black' if not shuffle_flag else "#2dd128",activebackground='White')
     else:
@@ -122,6 +123,7 @@ def changeTheme():
         refresh_btn.configure(background='#121212', foreground='White', activebackground='#121212', activeforeground='Grey')
         root.configure(background='#121212')
         arrow_lbl.configure(background='#121212', foreground='White')
+        search_box.configure(background='#3f3f40')
         title.configure(background="#121212", foreground="White")
         theme_btn.configure(text="Theme: Dark", background='#121212',
                             foreground='white', activebackground='#121212', activeforeground='gray')
@@ -470,27 +472,31 @@ file_name = ''
 
 # Play button action
 def playBtnAction(event=None):
-    global play_image, pause_image, clear_flag
+    global play_image, pause_image, clear_flag, file_name, first_flag
     if clear_flag or (event and root.focus_get() == search_box) or player.time > player.source.duration or first_flag:
         return
     if player.playing:
         player.pause()
+        menu_items[5] = pystray.MenuItem('Play', on_click)
+        icon.menu = pystray.Menu(*menu_items)
         music_bar.state(['disabled'])
         play_pause_btn.configure(image=play_image) if theme_btn.cget(
             'text') == 'Theme: Dark' else play_pause_btn.configure(image=play_image_inv)
     else:
-        if player.volume <= 0:
-            player.volume = 1.0
-            volume_bar.set(100)
-            volume_val.configure(text='50')
-        music_bar.state(['!disabled'])
-        play_pause_btn.configure(image=pause_image) if theme_btn.cget(
-            'text') == 'Theme: Dark' else play_pause_btn.configure(image=pause_image_inv)
         try:
             player.play()
         except:
             return
-
+        if player.volume <= 0:
+            player.volume = 1.0
+            volume_bar.set(100)
+            volume_val.configure(text='50')
+        menu_items[5] = pystray.MenuItem('Pause', on_click)
+        icon.menu = pystray.Menu(*menu_items)
+        music_bar.state(['!disabled'])
+        play_pause_btn.configure(image=pause_image) if theme_btn.cget(
+            'text') == 'Theme: Dark' else play_pause_btn.configure(image=pause_image_inv)
+    icon.title = ("[Playing] " if player.playing else "[Paused] ") + file_name[:75]
 # forward button action
 def forwardBtnAction():
     try:
@@ -574,9 +580,9 @@ def threadAction(prev_flag=False, search_file=None):
     track_length = int(player.source.duration)
     now_playing.configure(text=f'Now playing: {file_name[:75]}')
     try:
-        icon.title = file_name[:75] if file_name else 'True Music'
         player.seek(0.0)
         player.play()
+        icon.title = ("[Playing] " if player.playing else "[Paused] ") + file_name[:75]
     except:
         pass
     mins = track_length//60
@@ -667,8 +673,6 @@ def seek_tap(event):
         'text') == 'Theme: Dark' else play_pause_btn.configure(image=pause_image_inv)
     player.play()
 
-
-
 # key press
 def on_key_press(event):
     if event.keysym == "XF86AudioPlay":
@@ -703,8 +707,6 @@ def on_key_press(event):
             drop_down.focus()
         elif event.state & 1 and event.keysym.lower() == "n":
             forwardBtnAction()
-
-
 
 # Update seekbar
 def update_seekbar():
@@ -744,8 +746,6 @@ def date_modified_btn_action():
     date_modified_flag = not date_modified_flag
 
 
-
-
 def search_play_song(event=None):
     if search_song.get().strip() == 'No items match your search' or not search_song.get().strip():
         return # If search box is empty, do nothing
@@ -782,7 +782,7 @@ def search(event=None):
 def on_entry_click(event=None):
     if search_box.get() == 'Press Enter To Search':
         search_box.delete(0, "end")  # Remove the placeholder text
-        search_box.configure(foreground='White')  # Change text color to #121212
+        search_box.configure(foreground='White') if theme_btn.cget('text') == 'Theme: Dark' else search_box.configure(foreground='#16161d')  # Change text color to #121212
 
 def on_entry_leave(event=None):
     if search_box.get() == '':
@@ -852,7 +852,7 @@ def on_click(icon, item):
         on_close = True
         icon.stop()
         return
-    elif item.text == 'Play/Pause':
+    elif item.text == 'Play' or item.text == 'Pause':
         playBtnAction()
     elif item.text == 'Next Track':
         forwardBtnAction()
@@ -885,7 +885,7 @@ menu_items = [
     pystray.MenuItem('Repeat: Off', on_click),
     pystray.MenuItem('Autoplay: On', on_click),
     pystray.MenuItem('Next Track', on_click),
-    pystray.MenuItem('Play/Pause', on_click),
+    pystray.MenuItem('Pause', on_click),
     pystray.MenuItem('Previous Track', on_click),
     pystray.MenuItem('Hotkeys: Off', on_click),
     pystray.MenuItem('Quit', on_click),
@@ -1040,7 +1040,6 @@ search_box = Entry(root, foreground='gray',
 search_box.configure(highlightthickness=0)
 search_box.place(anchor=W, relwidth=0.25, relx=0.05, rely=0.67)
 search_box.insert(0, 'Press Enter To Search')  # Insert the placeholder text
-search_box.configure(foreground='gray')
 search_box.bind("<Return>", search)
 search_box.bind("<FocusIn>", on_entry_click)
 search_box.bind("<FocusOut>", on_entry_leave)
