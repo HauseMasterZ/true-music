@@ -364,11 +364,8 @@ def merge_sorted_lists(list1, list2, date=False):
             else:
                 merged_list.append(list2[j])
                 j += 1
-
-    # Append remaining elements from list1 and list2, if any
     merged_list.extend(list1[i:])
     merged_list.extend(list2[j:])
-
     return merged_list
 
 
