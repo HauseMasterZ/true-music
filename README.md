@@ -17,4 +17,4 @@ For cloning, Dependencies in requirements.txt.
 
 ``` pip install -r requirements.txt ```
 
-For installing using exe. All dependencies bundled in.
+For using normally unzip portable zip file. All dependencies bundled in.
