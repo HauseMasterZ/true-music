@@ -2,7 +2,7 @@
 # TrueMusic
 
 <p align="center">
-  <img src="https://github.com/HauseMasterZ/true-music/assets/113833707/ba7c10ab-4569-4c7a-9db2-7b6682d9bcc7" alt="Home Page"/>
+  <img src="https://github.com/HauseMasterZ/true-music/assets/113833707/d30b24ad-bab6-45bc-89a2-88fe18308782" alt="Home Page"/>
 </p>
 
 Are you annoyed about the fact that almost every shuffle algorithm that every music player uses out there is not trully random, and that It is just a long sequence of songs which eventually get repeated.
