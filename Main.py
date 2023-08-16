@@ -171,19 +171,16 @@ played = set()
 
 # Random Number Generator
 def secure_generator(prev_flag=False, search_file=None):
-    global number_of_files, first_flag, playing_index, corrupt_flag, prev_corrupt_flag, shuffle_flag
+    global number_of_files, first_flag, playing_index, corrupt_flag, prev_corrupt_flag, shuffle_flag, played
     if search_file is None:
         if shuffle_flag:
             secure_choice = secretsGenerator.randint(0, number_of_files-1)
-        else:
-            secure_choice = (max(playing_index - 1, 0) if prev_flag else playing_index + 1) if not first_flag else playing_index
-        if secure_choice in played and shuffle_flag:
-            if len(played) > number_of_files-1:
-                played.clear()
-            while secure_choice in played:
+            played = set() if len(played) >= number_of_files else played
+            while secure_choice in played or secure_choice == playing_index:
                 secure_choice = secretsGenerator.randint(0, number_of_files-1)
             played.add(secure_choice)
         else:
+            secure_choice = (max(playing_index - 1, 0) if prev_flag else playing_index + 1) if not first_flag else playing_index
             played.clear()
     try:
         if search_file == None:
@@ -192,7 +189,8 @@ def secure_generator(prev_flag=False, search_file=None):
         else:
             media = pyglet.media.load(search_file, streaming=True)
         corrupt_flag = False
-    except:
+    except Exception as e:
+        print(e)
         messagebox.showerror('Invalid Media Found',
                              'Some if not all media files are corrupted')
         clearDirectory()
