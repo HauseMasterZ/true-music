@@ -155,16 +155,29 @@ def changeTheme():
         selectDirectory.configure(background='#121212', foreground='White',activebackground='#121212')
         trueShuffle_btn.configure(background='#121212', foreground='White' if not shuffle_flag else "#2dd128", activebackground='#121212')
 
+pyglet.options['audio'] = ('openal', 'pulse', 'xaudio2', 'directsound', 'silent')
+
+# Audio Video
+audio_set = ('.m4a', '.mp3', '.aac', '.flac', '.wav', '.ogg', '.wma')
+# video_set = {"webm", "flv", "mp4", "mov", "wmv"}
+
 # Variables
 on_close = False
 auto_play_flag = True
 repeat_flag = False
+always_on_top_flag = False
+shuffle_flag = True
 first_flag = True
-pyglet.options['audio'] = ('openal', 'pulse', 'xaudio2', 'directsound', 'silent')
-
+date_modified_flag = False
+clear_flag = False
+hotkey_flag = False
+file_name = ''
+alphabetical_list = []
+date_modified_list = []
 player = pyglet.media.Player()
 pyglet.options['graphics'] = {'backend': 'gl'}
 playing_index = 0
+date_modified_cnt = 0
 corrupt_flag = False
 prev_corrupt_flag = False
 played = set()
@@ -239,8 +252,6 @@ def autoPlay():
             menu_items[2] = pystray.MenuItem('Repeat: Off', on_click)
             icon.menu = pystray.Menu(*menu_items)
 
-always_on_top_flag = False
-shuffle_flag = True
 
 # Always On Top
 def alwaysOnTop():
@@ -299,9 +310,7 @@ def autoRepeat():
             autoplay_btn.config(text="Autoplay: Disabled",
                                 relief=RIDGE)
 
-# Audio Video
-audio_set = ('.m4a', '.mp3', '.aac', '.flac', '.wav', '.ogg', '.wma')
-# video_set = {"webm", "flv", "mp4", "mov", "wmv"}
+
 
 # Function to get all the files in the directory including the subdirectories
 def get_all_files(folder_path):
@@ -320,13 +329,11 @@ def get_all_files(folder_path):
         return [], -1
     return all_files, file_count
 
-alphabetical_list = []
-date_modified_list = []
+
 
 # File Picker Open
 def openFilePicker():
-    global dir_musics, Directory, clear_flag, directory_box_flag, first_flag
-    directory_box_flag = True
+    global dir_musics, Directory, clear_flag, first_flag
     if first_flag:
         now_playing.configure(text='Now Playing: Please Wait...')
     Directory = filedialog.askdirectory(title="Select Directory")
@@ -337,10 +344,8 @@ def openFilePicker():
         load_music_thread = threading.Thread(target=loadMusicThread)
         load_music_thread.daemon = True
         load_music_thread.start()
-        directory_box_flag = False
         clear_flag = False
         return
-    directory_box_flag = False
     if first_flag:
         now_playing.configure(text='Now Playing: ')
 
@@ -406,7 +411,6 @@ def loadDateModified(all_paths):
     if not on_close:
         drop_down['values'] = tuple(alphabetical_list) if not date_modified_flag else tuple(date_modified_list)
 
-clear_flag = False
 
 # Clear Directory
 def clearDirectory():
@@ -456,6 +460,8 @@ def storePath():
         else:
             writeEmptyData()
 
+store_path_thread = threading.Thread(target=storePath)
+
 # Size Update Function
 def updateSize(event):
     music_bar.configure(to=root.winfo_width()//3)
@@ -464,8 +470,6 @@ def updateSize(event):
     now_playing.configure(font=("Aerial", (root.winfo_width() +
                                            root.winfo_height()) // 100)) 
 
-store_path_thread = threading.Thread(target=storePath)
-file_name = ''
 
 # Play button action
 def playBtnAction(event=None):
@@ -494,12 +498,12 @@ def playBtnAction(event=None):
         play_pause_btn.configure(image=pause_image) if theme_btn.cget(
             'text') == 'Theme: Dark' else play_pause_btn.configure(image=pause_image_inv)
     icon.title = ("[Playing] " if player.playing else "[Paused] ") + file_name[:75]
+
 # forward button action
 def forwardBtnAction():
     try:
-        player.delete()
-        player.seek(0)
         player.pause()
+        player.delete()
     except:
         return
     threadAction()    
@@ -508,7 +512,6 @@ def forwardBtnAction():
 def previousBtnAction():
     try:
         player.delete()
-        player.seek(0)
         player.pause()
     except:
         return
@@ -519,7 +522,6 @@ def playerEnd():
     global repeat_flag, auto_play_flag
     if repeat_flag:
         player.delete()
-        player.seek(0)
         player.play()
     elif auto_play_flag:
         threadAction()
@@ -527,9 +529,6 @@ def playerEnd():
         player.pause()
         play_pause_btn.configure(image=play_image) if theme_btn.cget(
             'text') == 'Theme: Dark' else play_pause_btn.configure(image=play_image_inv)
-
-
-date_modified_cnt = 0
 
 # Play Music
 def threadAction(prev_flag=False, search_file=None):
@@ -556,18 +555,10 @@ def threadAction(prev_flag=False, search_file=None):
             return
     else:
         if date_modified_flag and search_file is None:
-            date_modified_cnt = date_modified_cnt % number_of_files
-            name = ''
-            if not prev_flag:
-                name = date_modified_list[date_modified_cnt].split('#|#')[-1]
-                file_name = secure_generator(prev_flag, name)
-            else:
-                date_modified_cnt = max(0, date_modified_cnt-2)
-                name = date_modified_list[date_modified_cnt].split('#|#')[-1]
-                file_name = secure_generator(False, name)
-            date_modified_cnt += 1
-        else:
-            file_name = secure_generator(prev_flag, search_file)
+            date_modified_cnt = max(0, date_modified_cnt-2) if prev_flag else date_modified_cnt
+            search_file = date_modified_list[date_modified_cnt].split('#|#')[-1]
+            date_modified_cnt = (date_modified_cnt + 1) % number_of_files
+        file_name = secure_generator(prev_flag, search_file)
         if corrupt_flag or file_name is None:
             music_bar.state(['disabled'])
             return
@@ -598,9 +589,6 @@ def writeEmptyData():
         json.dump(data, f)
 
 def changeDirectoryBoxHeight():
-    global directory_box_flag
-    if directory_box_flag:
-        return
     if float(len(directory_box.get('0.0', 'end-1c')))*12.4181818182 > (root.winfo_width()):
         directory_box.config(height=2)
         refresh_btn.place(rely=0.41)
@@ -657,7 +645,6 @@ def on_volume_change(event):
     volume_val.configure(text=int(100 - volume_bar.get()))
     if player.volume == 0.0:
         muteBtnAction()
-
 
 # Seekbar update
 def seek_tap(event):
@@ -787,11 +774,9 @@ def on_entry_leave(event=None):
         search_box.configure(foreground='gray')
 
 def directoryBoxThread():
-    global directory_box_flag
-    if not directory_box_flag:
-        directory_thread = threading.Thread(target=openFilePicker)
-        directory_thread.daemon = True
-        directory_thread.start()
+    directory_thread = threading.Thread(target=openFilePicker)
+    directory_thread.daemon = True
+    directory_thread.start()
 
 def refreshBtnAction(given_directory=None):
     global number_of_files, on_close, date_modified_list, date_modified_flag, alphabetical_list, dir_musics
@@ -813,12 +798,10 @@ def refreshBtnAction(given_directory=None):
     return
 
 def refreshThreadAction():
-    global directory_box_flag
-    if not directory_box_flag:
-        refresh_btn.configure(text="Refreshing...", state="disabled")
-        refresh_thread = threading.Thread(target=refreshBtnAction)
-        refresh_thread.daemon = True
-        refresh_thread.start()
+    refresh_btn.configure(text="Refreshing...", state="disabled")
+    refresh_thread = threading.Thread(target=refreshBtnAction)
+    refresh_thread.daemon = True
+    refresh_thread.start()
 
 def set_focus(event):
     if event.widget == root:
@@ -899,8 +882,6 @@ def pystrayTray():
     return
 
 
-hotkey_flag = False
-
 def checkMediaKeys():
     global on_close, hotkey_flag
     if on_close:
@@ -968,12 +949,10 @@ title = Label(root, text="True Music ~ HauseMaster", font=("Corbel", 13))
 title.place(relx=0.5, rely=0.1, anchor=CENTER)
 title.configure(background="#121212", foreground="#f0f0f0")
 
-
 # Style
 style = ttk.Style()
 style.configure("myStyle.Horizontal.TScale", background='#121212')
 style.configure("myStyle.Vertical.TScale", background='#121212')
-
 
 # Root
 clear_btn = Button(root, text="Clear All",
@@ -985,23 +964,17 @@ clear_btn.place(relx=0.83, rely=0.58,  anchor=E)
 myTip4 = CreateToolTip(clear_btn, "Clear all the files in the directory "
                        "and Search Box and Current Queue")  # noqa
 
-
 remember_btn = Button(root, text="Store Path: Disabled",
                       command=rememberPathBtnAction, padx=6, font=("Corbel", 10))
-
 remember_btn.configure(background='#121212', foreground='white',
                        activebackground='#121212', relief="sunken", borderwidth=0, activeforeground='grey')
 remember_btn.place(relx=0.19, rely=0.58,  anchor=W)
+
 myTip2 = CreateToolTip(remember_btn, "Store the path of the folder you selected and "
                        "autoplay next time app is opened")  # noqa
 
-
-date_modified_flag = False
-
-
 date_modified_btn = Button(root, text="Date Modified: Disabled",
                       command=date_modified_btn_action, padx=6, font=("Corbel", 10))
-
 date_modified_btn.configure(background='#121212', foreground='white',
                        activebackground='#121212', relief="sunken", borderwidth=0, activeforeground='grey')
 date_modified_btn.place(relx=0.55, rely=0.58,  anchor=CENTER)
@@ -1011,7 +984,6 @@ now_playing = Label(root, text="Now playing: ", font=("Corbel", 10))
 now_playing.place(relx=0.5, rely=0.33, anchor=CENTER)
 now_playing.configure(background="#121212", foreground="#f0f0f0")
 
-
 seek_of_music = Label(root, text="00:00", font=("Verdana", 8))
 seek_of_music.place(relx=0.3, rely=0.25, anchor=CENTER)
 seek_of_music.configure(background="#121212", foreground="#f0f0f0")
@@ -1020,16 +992,13 @@ length_of_music = Label(root, text="0:00", font=("Verdana", 8))
 length_of_music.place(relx=0.7, rely=0.25, anchor=CENTER)
 length_of_music.configure(background="#121212", foreground="#f0f0f0")
 
-
 directory_box = Text(root, foreground="#121212", highlightthickness="1",
                      background="#0D0901", state=DISABLED)
 directory_box.configure(highlightcolor='lightblue', highlightthickness=1,
                         highlightbackground='lightblue', foreground='white', height=1)
 directory_box.place(relwidth=0.65, relx=0.51, rely=0.5, anchor=CENTER)
 
-
 Directory.replace("/", "//")
-
 
 search_box = Entry(root, foreground='gray',
                    background='#3f3f40', bd=1, relief=GROOVE)
@@ -1047,9 +1016,6 @@ try:
 except:
     pass
 
-
-
-
 search_song = StringVar()
 drop_down = ttk.Combobox(root, width=27, textvariable=search_song, state='readonly', takefocus=False, exportselection=False)
 drop_down.place(anchor=E, relx=0.85, rely=0.67, relwidth=0.5)
@@ -1057,7 +1023,6 @@ drop_down.configure(foreground='Gray')
 drop_down.set('All Music Files appear here')
 drop_down.bind('<<ComboboxSelected>>', search_play_song)
 drop_down['values'] = ('', )
-
 
 music_bar = ttk.Scale(root, from_=0, to=100, orient=HORIZONTAL,
                       style='myStyle.Horizontal.TScale', cursor='crosshair')
@@ -1070,14 +1035,8 @@ read_data_thread = threading.Thread(target=readData)
 read_data_thread.daemon = True
 read_data_thread.start()
 
-
-directory_box_flag = False
-
-
 selectDirectory = Button(root, text="Select Music Folder", command=directoryBoxThread,
                          width=root.winfo_width()//50, padx=6, wraplength=root.winfo_width()//6, font=("Corbel", 10))
-
-
 selectDirectory.configure(background='#121212', foreground='White',relief="ridge", borderwidth=0, activeforeground='grey', activebackground='#121212')
 
 def on_enter_direc(e):
@@ -1089,7 +1048,6 @@ selectDirectory.bind("<Leave>", on_leave_direc)
 
 selectDirectory.place(relx=0.01, rely=0.5, anchor=W,
                       relwidth=0.17, relheight=0.15)
-
 
 refresh_btn = Button(root, text="Refresh",
                       command=refreshThreadAction, padx=6, font=("Corbel", 10))
@@ -1107,12 +1065,10 @@ volume_bar.set(0)
 volume_bar.bind('<ButtonRelease-1>', on_volume_change)
 volume_bar.place(relx=0.85, rely=0.19, anchor=W, relheight=0.25)
 
-
 volume_image = PhotoImage(file=os.path.join(
     os.path.dirname(os.path.abspath(__file__)), 'volume.png'))
 volume_image_inv = PhotoImage(file=os.path.join(
     os.path.dirname(os.path.abspath(__file__)), 'volume_inverted.png'))
-
 
 volume_icon = Label(root, image=volume_image)
 volume_icon.place(relx=0.91, rely=0.18, anchor=W)
@@ -1123,42 +1079,29 @@ volume_val = Label(root, text='100')
 volume_val.place(relx=0.95, rely=0.18, anchor=W)
 volume_val.configure(background="#121212", foreground="#f0f0f0", borderwidth=0)
 
-
 autoplay_btn = Button(root, text="Autoplay: Enabled",
                       command=autoPlay, padx=6, pady=6, font=("Corbel", 10))
-
 autoplay_btn.configure(background='#121212', foreground='white',
                        activebackground='#121212', relief="sunken", borderwidth=1, activeforeground='grey')
-
-
 autoplay_btn.place(relx=0.99, rely=0.85, anchor=E, relheight=0.15, width=140)
 
 repeat_btn = Button(root, text="Repeat: Disabled",
                     command=autoRepeat, padx=6, font=("Corbel", 10))
 repeat_btn.configure(background='#121212', foreground='white',
                      activebackground='#121212', relief="ridge", borderwidth=1, activeforeground='grey')
-
-
-
 repeat_btn.place(relx=0.5, rely=0.85, anchor=CENTER, relheight=0.15, width=120)
 
 always_on_top_btn = Button(root, text="Always On Top: Disabled",
                            command=alwaysOnTop, padx=6, pady=6, font=("Corbel", 10))
-
 always_on_top_btn.configure(background='#121212', foreground='white',
                             activebackground='#121212', relief="ridge", borderwidth=1, activeforeground='grey')
-
-
 always_on_top_btn.place(relx=0.01, rely=0.85, anchor=W, relheight=0.15, width=150)
-
-
 
 theme_btn = Button(root, text="Theme: Dark",
                    command=changeTheme, font=("Corbel", 10))
 theme_btn.configure(background='#121212', foreground='white', activebackground='#121212',
                     relief="sunken", borderwidth=0, activeforeground='gray')
 theme_btn.place(anchor=W, relx=0.01, rely=0.1, relheight=0.11, relwidth=0.11)
-
 
 hotkey_btn = Button(root, text="Hotkeys: Off",
                    command=hotkeys, font=("Corbel", 10))
