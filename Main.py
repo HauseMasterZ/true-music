@@ -176,7 +176,7 @@ def secure_generator(prev_flag=False, search_file=None):
         if shuffle_flag:
             secure_choice = secretsGenerator.randint(0, number_of_files-1)
             played = set() if len(played) >= number_of_files else played
-            while secure_choice in played or secure_choice == playing_index:
+            while secure_choice in played or secure_choice == playing_index and number_of_files > 1:
                 secure_choice = secretsGenerator.randint(0, number_of_files-1)
             played.add(secure_choice)
         else:
@@ -443,9 +443,9 @@ def rememberPathBtnAction():
 # Store Path
 def storePath():
     global number_of_files, data_file, Directory
-    refreshBtnAction(Directory)
     with open(data_file, 'w', encoding='utf-8') as f:
         if remember_flag and not first_flag:
+            refreshBtnAction(Directory)
             data = {
                 "number_of_files": number_of_files,
                 "Directory": Directory,
@@ -465,7 +465,6 @@ def updateSize(event):
                                            root.winfo_height()) // 100)) 
 
 store_path_thread = threading.Thread(target=storePath)
-store_path_thread.daemon = True
 file_name = ''
 
 # Play button action
@@ -847,9 +846,8 @@ def on_click(icon, item):
         icon.stop()
         return
     if item.text == 'Quit':
-        on_close = True
         icon.stop()
-        return
+        onClosing()
     elif item.text == 'Play' or item.text == 'Pause':
         playBtnAction()
     elif item.text == 'Next Track':
