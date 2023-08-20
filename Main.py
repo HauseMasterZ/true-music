@@ -16,14 +16,6 @@ import pystray
 import PIL.Image
 import json
 
-data_file = os.path.join(os.path.dirname(
-    os.path.abspath(__file__)), 'data.json')
-Directory = ""
-dir_musics = []
-number_of_files = 0
-remember_flag = False
-secretsGenerator = secrets.SystemRandom()
-
 # Functions
 class CreateToolTip(object):
     """
@@ -154,7 +146,6 @@ def changeTheme():
         repeat_btn.configure(background='#121212', foreground='White', activebackground='#121212')
         selectDirectory.configure(background='#121212', foreground='White',activebackground='#121212')
         trueShuffle_btn.configure(background='#121212', foreground='White' if not shuffle_flag else "#2dd128", activebackground='#121212')
-
 pyglet.options['audio'] = ('openal', 'pulse', 'xaudio2', 'directsound', 'silent')
 
 # Audio Video
@@ -162,6 +153,13 @@ audio_set = ('.m4a', '.mp3', '.aac', '.flac', '.wav', '.ogg', '.wma')
 # video_set = {"webm", "flv", "mp4", "mov", "wmv"}
 
 # Variables
+data_file = os.path.join(os.path.dirname(
+    os.path.abspath(__file__)), 'data.json')
+Directory = ""
+dir_musics = []
+number_of_files = 0
+remember_flag = False
+secretsGenerator = secrets.SystemRandom()
 on_close = False
 auto_play_flag = True
 repeat_flag = False
