@@ -174,7 +174,6 @@ file_name = ''
 alphabetical_list = []
 date_modified_list = []
 player = pyglet.media.Player()
-pyglet.options['graphics'] = {'backend': 'gl'}
 playing_index = 0
 date_modified_cnt = 0
 corrupt_flag = False
@@ -308,8 +307,6 @@ def autoRepeat():
             icon.menu = pystray.Menu(*menu_items)
             autoplay_btn.config(text="Autoplay: Disabled",
                                 relief=RIDGE)
-
-
 
 # Function to get all the files in the directory including the subdirectories
 def get_all_files(folder_path):
