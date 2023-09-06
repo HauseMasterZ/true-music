@@ -15,7 +15,7 @@ import pyglet
 import pystray
 import PIL.Image
 import json
-
+import time
 # Functions
 class CreateToolTip(object):
     """
@@ -72,7 +72,12 @@ class CreateToolTip(object):
             tw.destroy()
 
 # Theme Button Action
-def changeTheme():
+def changeTheme() -> None:
+    """
+    Changes the theme of the application between light and dark mode.
+
+    This function updates the background color, foreground color, and images of various widgets to match the selected theme.
+    """
     global shuffle_flag
     if theme_btn.cget('text') == 'Theme: Dark':
         root.configure(background="White")
@@ -181,7 +186,22 @@ prev_corrupt_flag = False
 played = set()
 
 # Random Number Generator
-def secure_generator(prev_flag=False, search_file=None):
+def secure_generator(prev_flag: bool = False, search_file: str = None) -> str:
+    """
+    Generates a secure random number to select a music file.
+
+    This function generates a random number using the `secretsGenerator` object, which is used to select a music file to play.
+    If the shuffle flag is set to True, the function ensures that the same file is not played twice in a row.
+    If the search_file parameter is provided, the function loads the specified file instead of selecting a random file.
+    If an error occurs while loading the file, the function sets the `corrupt_flag` variable to True and displays an error message.
+
+    Args:
+        prev_flag (bool, optional): A flag indicating whether to play the previous file. Defaults to False.
+        search_file (str, optional): The path of the file to play. Defaults to None.
+
+    Returns:
+        str: The path of the selected music file.
+    """
     global number_of_files, first_flag, playing_index, corrupt_flag, prev_corrupt_flag, shuffle_flag, played
     if search_file is None:
         if shuffle_flag:
@@ -229,7 +249,7 @@ def secure_generator(prev_flag=False, search_file=None):
         return os.path.basename(search_file)
 
 # Autoplay
-def autoPlay():
+def autoPlay() -> None:
     global auto_play_flag, repeat_flag
     if auto_play_flag:
         auto_play_flag = False
@@ -250,9 +270,8 @@ def autoPlay():
             menu_items[2] = pystray.MenuItem('Repeat: Off', on_click)
             icon.menu = pystray.Menu(*menu_items)
 
-
 # Always On Top
-def alwaysOnTop():
+def alwaysOnTop() -> None:
     global always_on_top_flag
     if always_on_top_flag:
         root.attributes("-topmost", False)
@@ -266,7 +285,7 @@ def alwaysOnTop():
             text="Always On Top: Enabled", relief=SUNKEN)
 
 # Shuffle Button
-def trueShuffle():
+def trueShuffle() -> None:
     global shuffle_flag, date_modified_flag
     if date_modified_flag:
         date_modified_flag = False
@@ -287,7 +306,7 @@ def trueShuffle():
             text='True Shuffle: On', relief=SUNKEN, foreground='#2dd128')
 
 # Auto Repeat
-def autoRepeat():
+def autoRepeat() -> None:
     global repeat_flag, auto_play_flag
     if repeat_flag:
         repeat_flag = False
@@ -309,7 +328,7 @@ def autoRepeat():
                                 relief=RIDGE)
 
 # Function to get all the files in the directory including the subdirectories
-def get_all_files(folder_path):
+def get_all_files(folder_path: str) -> tuple(list[str], int):
     global on_close, clear_flag
     all_files = []
     file_count = 0
@@ -328,7 +347,7 @@ def get_all_files(folder_path):
 
 
 # File Picker Open
-def openFilePicker():
+def openFilePicker() -> None:
     global dir_musics, Directory, clear_flag, first_flag
     if first_flag:
         now_playing.configure(text='Now Playing: Please Wait...')
@@ -345,7 +364,7 @@ def openFilePicker():
     if first_flag:
         now_playing.configure(text='Now Playing: ')
 
-def merge_sorted_lists(list1, list2, date=False):
+def merge_sorted_lists(list1: list[str], list2: list[str], date: bool = False) -> list[str]:
     merged_list = []
     i, j = 0, 0
     while i < len(list1) and j < len(list2):
@@ -371,7 +390,7 @@ def merge_sorted_lists(list1, list2, date=False):
 
 
 # Search File In Directory
-def loadMusicThread():
+def loadMusicThread() -> None:
     global number_of_files, Directory, dir_musics
     Directory.replace("/", "//")
     tmp, tmp_num = get_all_files(Directory)
@@ -391,7 +410,7 @@ def loadMusicThread():
     changeDirectoryBoxHeight()
 
 # date modified sort
-def loadDateModified(all_paths):
+def loadDateModified(all_paths: list[str]) -> None:
     global date_modified_list, on_close, date_modified_flag, alphabetical_list
     tmp = []
     date_file_names = sorted(all_paths, key = lambda x: os.path.getctime(x), reverse=True)
@@ -409,7 +428,7 @@ def loadDateModified(all_paths):
 
 
 # Clear Directory
-def clearDirectory():
+def clearDirectory() -> None:
     global clear_flag, number_of_files, Directory, alphabetical_list, date_modified_list
     search_box.delete(0, END)
     dir_musics.clear()
@@ -431,7 +450,7 @@ def clearDirectory():
     Directory = ""
 
 # Remember Path
-def rememberPathBtnAction():
+def rememberPathBtnAction() -> None:
     global remember_flag
     if remember_flag:
         remember_btn.configure(text='Store Path: Disabled')
@@ -441,7 +460,7 @@ def rememberPathBtnAction():
 
 
 # Store Path
-def storePath():
+def storePath() -> None:
     global number_of_files, data_file, Directory
     with open(data_file, 'w', encoding='utf-8') as f:
         if remember_flag and not first_flag:
@@ -459,7 +478,7 @@ def storePath():
 store_path_thread = threading.Thread(target=storePath)
 
 # Size Update Function
-def updateSize(event):
+def updateSize(event: object) -> None:
     music_bar.configure(to=root.winfo_width()//3)
     title.configure(
         font=("Corbel", (root.winfo_width() + root.winfo_height()) // 50))
@@ -468,7 +487,7 @@ def updateSize(event):
 
 
 # Play button action
-def playBtnAction(event=None):
+def playBtnAction(event: object=None) -> None:
     global play_image, pause_image, clear_flag, file_name, first_flag
     if clear_flag or (event and root.focus_get() == search_box) or player.time > player.source.duration or first_flag:
         return
@@ -496,7 +515,7 @@ def playBtnAction(event=None):
     icon.title = ("[Playing] " if player.playing else "[Paused] ") + file_name[:75]
 
 # forward button action
-def forwardBtnAction():
+def forwardBtnAction() -> None:
     try:
         player.pause()
         player.delete()
@@ -505,7 +524,7 @@ def forwardBtnAction():
     threadAction()    
 
 # backward button action
-def previousBtnAction():
+def previousBtnAction() -> None:
     try:
         player.delete()
         player.pause()
@@ -514,7 +533,7 @@ def previousBtnAction():
     threadAction(True)
 
 # on play end
-def playerEnd():
+def playerEnd() -> None:
     global repeat_flag, auto_play_flag
     if repeat_flag:
         player.delete()
@@ -527,7 +546,7 @@ def playerEnd():
             'text') == 'Theme: Dark' else play_pause_btn.configure(image=play_image_inv)
 
 # Play Music
-def threadAction(prev_flag=False, search_file=None):
+def threadAction(prev_flag: bool=False, search_file: str=None) -> None:
     global first_flag, file_name, clear_flag, corrupt_flag, date_modified_flag, date_modified_cnt, number_of_files
     if clear_flag:
         music_bar.set(0)
@@ -573,7 +592,7 @@ def threadAction(prev_flag=False, search_file=None):
     secs = (track_length % 60)
     length_of_music.configure(text=f'{mins}:{secs:02d}')
 
-def writeEmptyData():
+def writeEmptyData() -> None:
     global data_file
     with open(data_file, 'w', encoding='utf-8') as f:
         data = {
@@ -584,7 +603,7 @@ def writeEmptyData():
         }
         json.dump(data, f)
 
-def changeDirectoryBoxHeight():
+def changeDirectoryBoxHeight() -> None:
     if float(len(directory_box.get('0.0', 'end-1c')))*12.4181818182 > (root.winfo_width()):
         directory_box.config(height=2)
         refresh_btn.place(rely=0.41)
@@ -593,7 +612,7 @@ def changeDirectoryBoxHeight():
         refresh_btn.place(rely=0.43)
 
 # data file path modify here
-def readData():
+def readData() -> None:
     global Directory, drop_down, number_of_files, on_close, date_modified_list, dir_musics, alphabetical_list
     try:
         with open(data_file, 'r', encoding='utf-8') as f:
@@ -627,7 +646,7 @@ def readData():
         root.lift()
         root.focus_force()
 
-def muteBtnAction(event=None):
+def muteBtnAction(event: object=None) -> None:
     global play_image, play_image_inv
     player.pause()
     music_bar.state(['disabled'])
@@ -635,7 +654,7 @@ def muteBtnAction(event=None):
         'text') == 'Theme: Dark' else play_pause_btn.configure(image=play_image_inv)
 
 # Volume button action
-def on_volume_change(event):
+def on_volume_change(event: object) -> None:
     player.volume = (100 - event.y) / 100
     volume_bar.set((event.y/volume_bar.winfo_height()) * 100)
     volume_val.configure(text=int(100 - volume_bar.get()))
@@ -643,7 +662,7 @@ def on_volume_change(event):
         muteBtnAction()
 
 # Seekbar update
-def seek_tap(event):
+def seek_tap(event: object) -> None:
     seek_position = event.x / (root.winfo_width()/3)
     total_time = player.source.duration
     player.delete()
@@ -654,7 +673,7 @@ def seek_tap(event):
     player.play()
 
 # key press
-def on_key_press(event):
+def on_key_press(event: object) -> None:
     if event.keysym == "XF86AudioPlay":
         playBtnAction()
     elif event.keysym == "XF86AudioPrev":
@@ -689,7 +708,7 @@ def on_key_press(event):
             forwardBtnAction()
 
 # Update seekbar
-def update_seekbar():
+def update_seekbar() -> None:
     global on_close, file_name
     if on_close:
         return
@@ -708,7 +727,7 @@ def update_seekbar():
         music_bar.set(seek_position)
     root.after(100, update_seekbar)
 
-def date_modified_btn_action():
+def date_modified_btn_action() -> None:
     global date_modified_flag, date_modified_cnt, shuffle_flag, alphabetical_list , date_modified_list
     date_modified_cnt = 0
     if shuffle_flag:
@@ -726,7 +745,7 @@ def date_modified_btn_action():
     date_modified_flag = not date_modified_flag
 
 
-def search_play_song(event=None):
+def search_play_song(event: object=None) -> None:
     if search_song.get().strip() == 'No items match your search' or not search_song.get().strip():
         return # If search box is empty, do nothing
     global date_modified_cnt, date_modified_flag
@@ -741,7 +760,7 @@ def search_play_song(event=None):
     play_thread.start()
 
 
-def search(event=None):
+def search(event: object=None) -> None:
     global date_modified_list, alphabetical_list, date_modified_flag
     search_term = search_box.get().strip().lower()
     if search_term == '':
@@ -759,7 +778,7 @@ def search(event=None):
         drop_down.event_generate("<Down>")
 
 
-def on_entry_click(event=None):
+def on_entry_click(event: object=None) -> None:
     if search_box.get() == 'Press Enter To Search':
         search_box.delete(0, "end")  # Remove the placeholder text
         search_box.configure(foreground='White') if theme_btn.cget('text') == 'Theme: Dark' else search_box.configure(foreground='#16161d')  # Change text color to #121212
@@ -769,12 +788,12 @@ def on_entry_leave(event=None):
         search_box.insert(0, 'Press Enter To Search')
         search_box.configure(foreground='gray')
 
-def directoryBoxThread():
+def directoryBoxThread() -> None:
     directory_thread = threading.Thread(target=openFilePicker)
     directory_thread.daemon = True
     directory_thread.start()
 
-def refreshBtnAction(given_directory=None):
+def refreshBtnAction(given_directory: str=None) -> None:
     global number_of_files, on_close, date_modified_list, date_modified_flag, alphabetical_list, dir_musics
     number_of_files = 0
     date_modified_list = []
@@ -793,17 +812,17 @@ def refreshBtnAction(given_directory=None):
         refresh_btn.configure(text="Refresh", state="normal")
     return
 
-def refreshThreadAction():
+def refreshThreadAction() -> None:
     refresh_btn.configure(text="Refreshing...", state="disabled")
     refresh_thread = threading.Thread(target=refreshBtnAction)
     refresh_thread.daemon = True
     refresh_thread.start()
 
-def set_focus(event):
+def set_focus(event: object=None) -> None:
     if event.widget == root:
         root.focus_set()
 
-def hotkeys():
+def hotkeys() -> None:
     global hotkey_flag
     if hotkey_flag:
         hotkey_flag = False
@@ -819,7 +838,7 @@ def hotkeys():
         mediaKeysThread.daemon = True
         mediaKeysThread.start()
 
-def on_click(icon, item):
+def on_click(icon: pystray.Icon, item: pystray.MenuItem) -> None:
     global on_close
     if on_close:
         icon.stop()
@@ -842,7 +861,7 @@ def on_click(icon, item):
     elif item.text == 'Hotkeys: On' or item.text == 'Hotkeys: Off':
         hotkeys()
 
-def showRoot(icon=None, item=None):
+def showRoot(icon: pystray.Icon=None, item: pystray.MenuItem=None) -> None:
     if root.state() == 'normal':
         root.withdraw()
     else:
@@ -866,7 +885,7 @@ menu_items = [
     pystray.MenuItem('Quit', on_click),
 ]
 
-def pystrayTray():
+def pystrayTray() -> None:
     global icon, shuffle_flag
     icon.menu = pystray.Menu(*menu_items)
     try:
@@ -877,12 +896,11 @@ def pystrayTray():
     onClosing()
     return
 
-
-def checkMediaKeys():
+def checkMediaKeys() -> None:
     global on_close, hotkey_flag
     if on_close:
         return
-    def on_press(key):
+    def on_press(key: object) -> None:
         try:
             if not hotkey_flag:
                 listener.stop()
@@ -901,11 +919,10 @@ def checkMediaKeys():
             listener.join()
     return 
 
-
-def onMinimize(event):
+def onMinimize(event: object=None) -> None:
     root.withdraw()
 
-def onClosing():
+def onClosing() -> None:
     global on_close, Directory, icon
     os.remove(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'window.lock'))
     store_path_thread.start()
@@ -920,254 +937,254 @@ def onClosing():
     except Exception as e:
         os.kill(os.getpid(), 9)
 
+if __name__ == "__main__":
+    root = Tk()
+    root.minsize(200, 50)
+    root.geometry(f"{root.winfo_screenwidth()//2}x{root.winfo_screenheight()//2}")
+    root.configure(background="#121212")
+    root.title("True Music")
+    root.withdraw()
+    is_windows = os.name == 'nt'
 
-root = Tk()
-root.minsize(200, 50)
-root.geometry(f"{root.winfo_screenwidth()//2}x{root.winfo_screenheight()//2}")
-root.configure(background="#121212")
-root.title("True Music")
-root.withdraw()
-is_windows = os.name == 'nt'
+    try:
+        if is_windows:
+            root.iconbitmap(os.path.join(os.path.dirname(
+                os.path.abspath(__file__)), 'resurrection.ico'))
+        else:
+            root.iconbitmap('@'+os.path.join(os.path.dirname(
+                os.path.abspath(__file__)), 'trueShuffle.xbm'))
+    except:
+        messagebox.showerror('Iconbitmap icon not found',
+                            'Window Icon Cannot be loaded')
 
-try:
-    if is_windows:
-        root.iconbitmap(os.path.join(os.path.dirname(
-            os.path.abspath(__file__)), 'resurrection.ico'))
-    else:
-        root.iconbitmap('@'+os.path.join(os.path.dirname(
-            os.path.abspath(__file__)), 'trueShuffle.xbm'))
-except:
-    messagebox.showerror('Iconbitmap icon not found',
-                         'Window Icon Cannot be loaded')
+    # Heading
+    title = Label(root, text="True Music ~ HauseMaster", font=("Corbel", 13))
+    title.place(relx=0.5, rely=0.1, anchor=CENTER)
+    title.configure(background="#121212", foreground="#f0f0f0")
 
-# Heading
-title = Label(root, text="True Music ~ HauseMaster", font=("Corbel", 13))
-title.place(relx=0.5, rely=0.1, anchor=CENTER)
-title.configure(background="#121212", foreground="#f0f0f0")
+    # Style
+    style = ttk.Style()
+    style.configure("myStyle.Horizontal.TScale", background='#121212')
+    style.configure("myStyle.Vertical.TScale", background='#121212')
 
-# Style
-style = ttk.Style()
-style.configure("myStyle.Horizontal.TScale", background='#121212')
-style.configure("myStyle.Vertical.TScale", background='#121212')
+    # Root
+    clear_btn = Button(root, text="Clear All",
+                    command=clearDirectory, padx=6, font=("Corbel", 10))
 
-# Root
-clear_btn = Button(root, text="Clear All",
-                   command=clearDirectory, padx=6, font=("Corbel", 10))
+    clear_btn.configure(background='#121212', foreground='white',
+                        activebackground='#121212', relief="sunken", borderwidth=0, activeforeground='grey')
+    clear_btn.place(relx=0.83, rely=0.58,  anchor=E)
+    myTip4 = CreateToolTip(clear_btn, "Clear all the files in the directory "
+                        "and Search Box and Current Queue")  # noqa
 
-clear_btn.configure(background='#121212', foreground='white',
-                    activebackground='#121212', relief="sunken", borderwidth=0, activeforeground='grey')
-clear_btn.place(relx=0.83, rely=0.58,  anchor=E)
-myTip4 = CreateToolTip(clear_btn, "Clear all the files in the directory "
-                       "and Search Box and Current Queue")  # noqa
+    remember_btn = Button(root, text="Store Path: Disabled",
+                        command=rememberPathBtnAction, padx=6, font=("Corbel", 10))
+    remember_btn.configure(background='#121212', foreground='white',
+                        activebackground='#121212', relief="sunken", borderwidth=0, activeforeground='grey')
+    remember_btn.place(relx=0.19, rely=0.58,  anchor=W)
 
-remember_btn = Button(root, text="Store Path: Disabled",
-                      command=rememberPathBtnAction, padx=6, font=("Corbel", 10))
-remember_btn.configure(background='#121212', foreground='white',
-                       activebackground='#121212', relief="sunken", borderwidth=0, activeforeground='grey')
-remember_btn.place(relx=0.19, rely=0.58,  anchor=W)
+    myTip2 = CreateToolTip(remember_btn, "Store the path of the folder you selected and "
+                        "autoplay next time app is opened")  # noqa
 
-myTip2 = CreateToolTip(remember_btn, "Store the path of the folder you selected and "
-                       "autoplay next time app is opened")  # noqa
+    date_modified_btn = Button(root, text="Date Modified: Disabled",
+                        command=date_modified_btn_action, padx=6, font=("Corbel", 10))
+    date_modified_btn.configure(background='#121212', foreground='white',
+                        activebackground='#121212', relief="sunken", borderwidth=0, activeforeground='grey')
+    date_modified_btn.place(relx=0.55, rely=0.58,  anchor=CENTER)
+    myTip1 = CreateToolTip(date_modified_btn, "Sorts the songs by date modified")  # noqa
 
-date_modified_btn = Button(root, text="Date Modified: Disabled",
-                      command=date_modified_btn_action, padx=6, font=("Corbel", 10))
-date_modified_btn.configure(background='#121212', foreground='white',
-                       activebackground='#121212', relief="sunken", borderwidth=0, activeforeground='grey')
-date_modified_btn.place(relx=0.55, rely=0.58,  anchor=CENTER)
-myTip1 = CreateToolTip(date_modified_btn, "Sorts the songs by date modified")  # noqa
+    now_playing = Label(root, text="Now playing: ", font=("Corbel", 10))
+    now_playing.place(relx=0.5, rely=0.33, anchor=CENTER)
+    now_playing.configure(background="#121212", foreground="#f0f0f0")
 
-now_playing = Label(root, text="Now playing: ", font=("Corbel", 10))
-now_playing.place(relx=0.5, rely=0.33, anchor=CENTER)
-now_playing.configure(background="#121212", foreground="#f0f0f0")
+    seek_of_music = Label(root, text="00:00", font=("Verdana", 8))
+    seek_of_music.place(relx=0.3, rely=0.25, anchor=CENTER)
+    seek_of_music.configure(background="#121212", foreground="#f0f0f0")
 
-seek_of_music = Label(root, text="00:00", font=("Verdana", 8))
-seek_of_music.place(relx=0.3, rely=0.25, anchor=CENTER)
-seek_of_music.configure(background="#121212", foreground="#f0f0f0")
+    length_of_music = Label(root, text="0:00", font=("Verdana", 8))
+    length_of_music.place(relx=0.7, rely=0.25, anchor=CENTER)
+    length_of_music.configure(background="#121212", foreground="#f0f0f0")
 
-length_of_music = Label(root, text="0:00", font=("Verdana", 8))
-length_of_music.place(relx=0.7, rely=0.25, anchor=CENTER)
-length_of_music.configure(background="#121212", foreground="#f0f0f0")
+    directory_box = Text(root, foreground="#121212", highlightthickness="1",
+                        background="#0D0901", state=DISABLED)
+    directory_box.configure(highlightcolor='lightblue', highlightthickness=1,
+                            highlightbackground='lightblue', foreground='white', height=1)
+    directory_box.place(relwidth=0.65, relx=0.51, rely=0.5, anchor=CENTER)
 
-directory_box = Text(root, foreground="#121212", highlightthickness="1",
-                     background="#0D0901", state=DISABLED)
-directory_box.configure(highlightcolor='lightblue', highlightthickness=1,
-                        highlightbackground='lightblue', foreground='white', height=1)
-directory_box.place(relwidth=0.65, relx=0.51, rely=0.5, anchor=CENTER)
+    Directory.replace("/", "//")
 
-Directory.replace("/", "//")
+    search_box = Entry(root, foreground='gray',
+                    background='#3f3f40', bd=1, relief=GROOVE)
+    search_box.configure(highlightthickness=0)
+    search_box.place(anchor=W, relwidth=0.25, relx=0.05, rely=0.67)
+    search_box.insert(0, 'Press Enter To Search')  # Insert the placeholder text
+    search_box.bind("<Return>", search)
+    search_box.bind("<FocusIn>", on_entry_click)
+    search_box.bind("<FocusOut>", on_entry_leave)
 
-search_box = Entry(root, foreground='gray',
-                   background='#3f3f40', bd=1, relief=GROOVE)
-search_box.configure(highlightthickness=0)
-search_box.place(anchor=W, relwidth=0.25, relx=0.05, rely=0.67)
-search_box.insert(0, 'Press Enter To Search')  # Insert the placeholder text
-search_box.bind("<Return>", search)
-search_box.bind("<FocusIn>", on_entry_click)
-search_box.bind("<FocusOut>", on_entry_leave)
+    try:
+        arrow_lbl = Label(root, text='⇌', font=('Corbel', 14))
+        arrow_lbl.configure(background='#121212', foreground='White')
+        arrow_lbl.place(anchor=CENTER, relx=0.33, rely=0.67)
+    except:
+        pass
 
-try:
-    arrow_lbl = Label(root, text='⇌', font=('Corbel', 14))
-    arrow_lbl.configure(background='#121212', foreground='White')
-    arrow_lbl.place(anchor=CENTER, relx=0.33, rely=0.67)
-except:
-    pass
+    search_song = StringVar()
+    drop_down = ttk.Combobox(root, width=27, textvariable=search_song, state='readonly', takefocus=False, exportselection=False)
+    drop_down.place(anchor=E, relx=0.85, rely=0.67, relwidth=0.5)
+    drop_down.configure(foreground='Gray')
+    drop_down.set('All Music Files appear here')
+    drop_down.bind('<<ComboboxSelected>>', search_play_song)
+    drop_down['values'] = ('', )
 
-search_song = StringVar()
-drop_down = ttk.Combobox(root, width=27, textvariable=search_song, state='readonly', takefocus=False, exportselection=False)
-drop_down.place(anchor=E, relx=0.85, rely=0.67, relwidth=0.5)
-drop_down.configure(foreground='Gray')
-drop_down.set('All Music Files appear here')
-drop_down.bind('<<ComboboxSelected>>', search_play_song)
-drop_down['values'] = ('', )
+    music_bar = ttk.Scale(root, from_=0, to=100, orient=HORIZONTAL,
+                        style='myStyle.Horizontal.TScale', cursor='crosshair')
+    music_bar.bind('<Button-1>', seek_tap)
+    # music_bar.bind('<ButtonRelease-1>', seek_tap)
+    music_bar.place(relx=0.5, rely=0.2, anchor=CENTER, relwidth=0.33)
+    music_bar.state(['disabled'])
 
-music_bar = ttk.Scale(root, from_=0, to=100, orient=HORIZONTAL,
-                      style='myStyle.Horizontal.TScale', cursor='crosshair')
-music_bar.bind('<Button-1>', seek_tap)
-# music_bar.bind('<ButtonRelease-1>', seek_tap)
-music_bar.place(relx=0.5, rely=0.2, anchor=CENTER, relwidth=0.33)
-music_bar.state(['disabled'])
+    read_data_thread = threading.Thread(target=readData)
+    read_data_thread.daemon = True
+    read_data_thread.start()
 
-read_data_thread = threading.Thread(target=readData)
-read_data_thread.daemon = True
-read_data_thread.start()
+    selectDirectory = Button(root, text="Select Music Folder", command=directoryBoxThread,
+                            width=root.winfo_width()//50, padx=6, wraplength=root.winfo_width()//6, font=("Corbel", 10))
+    selectDirectory.configure(background='#121212', foreground='White',relief="ridge", borderwidth=0, activeforeground='grey', activebackground='#121212')
 
-selectDirectory = Button(root, text="Select Music Folder", command=directoryBoxThread,
-                         width=root.winfo_width()//50, padx=6, wraplength=root.winfo_width()//6, font=("Corbel", 10))
-selectDirectory.configure(background='#121212', foreground='White',relief="ridge", borderwidth=0, activeforeground='grey', activebackground='#121212')
+    def on_enter_direc(e: object) -> None:
+        selectDirectory.configure(borderwidth=1)
+    def on_leave_direc(e: object) -> None:
+        selectDirectory.configure(borderwidth=0)
+    selectDirectory.bind("<Enter>", on_enter_direc)
+    selectDirectory.bind("<Leave>", on_leave_direc)
 
-def on_enter_direc(e):
-    selectDirectory.configure(borderwidth=1)
-def on_leave_direc(e):
-    selectDirectory.configure(borderwidth=0)
-selectDirectory.bind("<Enter>", on_enter_direc)
-selectDirectory.bind("<Leave>", on_leave_direc)
+    selectDirectory.place(relx=0.01, rely=0.5, anchor=W,
+                        relwidth=0.17, relheight=0.15)
 
-selectDirectory.place(relx=0.01, rely=0.5, anchor=W,
-                      relwidth=0.17, relheight=0.15)
+    refresh_btn = Button(root, text="Refresh",
+                        command=refreshThreadAction, padx=6, font=("Corbel", 10))
+    refresh_btn.configure(background='#121212', foreground='white',
+                        activebackground='#121212', relief="sunken", borderwidth=0, activeforeground='grey')
 
-refresh_btn = Button(root, text="Refresh",
-                      command=refreshThreadAction, padx=6, font=("Corbel", 10))
-refresh_btn.configure(background='#121212', foreground='white',
-                       activebackground='#121212', relief="sunken", borderwidth=0, activeforeground='grey')
+    refresh_btn.place(relx=0.19, rely=0.43,  anchor=W)
+    myTip3 = CreateToolTip(refresh_btn, "Refresh All the files in the directory"
+                        " and ")
 
-refresh_btn.place(relx=0.19, rely=0.43,  anchor=W)
-myTip3 = CreateToolTip(refresh_btn, "Refresh All the files in the directory"
-                       " and ")
+    volume_bar = ttk.Scale(root, from_=0, to=100, orient=VERTICAL,
+                        style='myStyle.Vertical.TScale', cursor='right_ptr')
+    volume_bar.set(0)
+    # volume_bar.bind('<Button-1>', on_volume_change)
+    volume_bar.bind('<ButtonRelease-1>', on_volume_change)
+    volume_bar.place(relx=0.85, rely=0.19, anchor=W, relheight=0.25)
 
-volume_bar = ttk.Scale(root, from_=0, to=100, orient=VERTICAL,
-                       style='myStyle.Vertical.TScale', cursor='right_ptr')
-volume_bar.set(0)
-# volume_bar.bind('<Button-1>', on_volume_change)
-volume_bar.bind('<ButtonRelease-1>', on_volume_change)
-volume_bar.place(relx=0.85, rely=0.19, anchor=W, relheight=0.25)
+    volume_image = PhotoImage(file=os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), 'volume.png'))
+    volume_image_inv = PhotoImage(file=os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), 'volume_inverted.png'))
 
-volume_image = PhotoImage(file=os.path.join(
-    os.path.dirname(os.path.abspath(__file__)), 'volume.png'))
-volume_image_inv = PhotoImage(file=os.path.join(
-    os.path.dirname(os.path.abspath(__file__)), 'volume_inverted.png'))
+    volume_icon = Label(root, image=volume_image)
+    volume_icon.place(relx=0.91, rely=0.18, anchor=W)
+    volume_icon.configure(borderwidth=0, background="#121212")
+    volume_icon.bind('<Button-1>', muteBtnAction)
 
-volume_icon = Label(root, image=volume_image)
-volume_icon.place(relx=0.91, rely=0.18, anchor=W)
-volume_icon.configure(borderwidth=0, background="#121212")
-volume_icon.bind('<Button-1>', muteBtnAction)
+    volume_val = Label(root, text='100')
+    volume_val.place(relx=0.95, rely=0.18, anchor=W)
+    volume_val.configure(background="#121212", foreground="#f0f0f0", borderwidth=0)
 
-volume_val = Label(root, text='100')
-volume_val.place(relx=0.95, rely=0.18, anchor=W)
-volume_val.configure(background="#121212", foreground="#f0f0f0", borderwidth=0)
+    autoplay_btn = Button(root, text="Autoplay: Enabled",
+                        command=autoPlay, padx=6, pady=6, font=("Corbel", 10))
+    autoplay_btn.configure(background='#121212', foreground='white',
+                        activebackground='#121212', relief="sunken", borderwidth=1, activeforeground='grey')
+    autoplay_btn.place(relx=0.99, rely=0.85, anchor=E, relheight=0.15, width=140)
 
-autoplay_btn = Button(root, text="Autoplay: Enabled",
-                      command=autoPlay, padx=6, pady=6, font=("Corbel", 10))
-autoplay_btn.configure(background='#121212', foreground='white',
-                       activebackground='#121212', relief="sunken", borderwidth=1, activeforeground='grey')
-autoplay_btn.place(relx=0.99, rely=0.85, anchor=E, relheight=0.15, width=140)
+    repeat_btn = Button(root, text="Repeat: Disabled",
+                        command=autoRepeat, padx=6, font=("Corbel", 10))
+    repeat_btn.configure(background='#121212', foreground='white',
+                        activebackground='#121212', relief="ridge", borderwidth=1, activeforeground='grey')
+    repeat_btn.place(relx=0.5, rely=0.85, anchor=CENTER, relheight=0.15, width=120)
 
-repeat_btn = Button(root, text="Repeat: Disabled",
-                    command=autoRepeat, padx=6, font=("Corbel", 10))
-repeat_btn.configure(background='#121212', foreground='white',
-                     activebackground='#121212', relief="ridge", borderwidth=1, activeforeground='grey')
-repeat_btn.place(relx=0.5, rely=0.85, anchor=CENTER, relheight=0.15, width=120)
+    always_on_top_btn = Button(root, text="Always On Top: Disabled",
+                            command=alwaysOnTop, padx=6, pady=6, font=("Corbel", 10))
+    always_on_top_btn.configure(background='#121212', foreground='white',
+                                activebackground='#121212', relief="ridge", borderwidth=1, activeforeground='grey')
+    always_on_top_btn.place(relx=0.01, rely=0.85, anchor=W, relheight=0.15, width=150)
 
-always_on_top_btn = Button(root, text="Always On Top: Disabled",
-                           command=alwaysOnTop, padx=6, pady=6, font=("Corbel", 10))
-always_on_top_btn.configure(background='#121212', foreground='white',
-                            activebackground='#121212', relief="ridge", borderwidth=1, activeforeground='grey')
-always_on_top_btn.place(relx=0.01, rely=0.85, anchor=W, relheight=0.15, width=150)
+    theme_btn = Button(root, text="Theme: Dark",
+                    command=changeTheme, font=("Corbel", 10))
+    theme_btn.configure(background='#121212', foreground='white', activebackground='#121212',
+                        relief="sunken", borderwidth=0, activeforeground='gray')
+    theme_btn.place(anchor=W, relx=0.01, rely=0.1, relheight=0.11, relwidth=0.11)
 
-theme_btn = Button(root, text="Theme: Dark",
-                   command=changeTheme, font=("Corbel", 10))
-theme_btn.configure(background='#121212', foreground='white', activebackground='#121212',
-                    relief="sunken", borderwidth=0, activeforeground='gray')
-theme_btn.place(anchor=W, relx=0.01, rely=0.1, relheight=0.11, relwidth=0.11)
-
-hotkey_btn = Button(root, text="Hotkeys: Off",
-                   command=hotkeys, font=("Corbel", 10))
-hotkey_btn.configure(background='#121212', foreground='white', activebackground='#121212',
-                    relief="sunken", borderwidth=0, activeforeground='gray')
-hotkey_btn.place(anchor=W, relx=0.15, rely=0.1, relheight=0.11, relwidth=0.11)
-
-
-play_image = PhotoImage(file=os.path.join(
-    os.path.dirname(os.path.abspath(__file__)), 'play.png'))
-
-play_image_inv = PhotoImage(file=os.path.join(
-    os.path.dirname(os.path.abspath(__file__)), 'play_inverted.png'))
-
-pause_image = PhotoImage(file=os.path.join(
-    os.path.dirname(os.path.abspath(__file__)), 'pause.png'))
-
-pause_image_inv = PhotoImage(file=os.path.join(
-    os.path.dirname(os.path.abspath(__file__)), 'pause_inverted.png'))
-
-play_pause_btn = Button(root, image=play_image, command=playBtnAction)
-play_pause_btn.configure(relief="sunken", borderwidth=0,
-                         background='#121212', activebackground='#121212')
-play_pause_btn.place(relx=0.15, rely=0.2, anchor=CENTER)
-
-forward_image = PhotoImage(file=os.path.join(
-    os.path.dirname(os.path.abspath(__file__)), 'forward.png'))
-
-forward_image_inv = PhotoImage(file=os.path.join(
-    os.path.dirname(os.path.abspath(__file__)), 'forward_inverted.png'))
-
-forward_btn = Button(root, image=forward_image, command=forwardBtnAction)
-forward_btn.configure(relief="sunken", borderwidth=0,
-                      background='#121212', activebackground='#121212')
-forward_btn.place(relx=0.25, rely=0.2, anchor=CENTER)
+    hotkey_btn = Button(root, text="Hotkeys: Off",
+                    command=hotkeys, font=("Corbel", 10))
+    hotkey_btn.configure(background='#121212', foreground='white', activebackground='#121212',
+                        relief="sunken", borderwidth=0, activeforeground='gray')
+    hotkey_btn.place(anchor=W, relx=0.15, rely=0.1, relheight=0.11, relwidth=0.11)
 
 
-previous_image = PhotoImage(file=os.path.join(
-    os.path.dirname(os.path.abspath(__file__)), 'previous.png'))
+    play_image = PhotoImage(file=os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), 'play.png'))
 
-previous_image_inv = PhotoImage(file=os.path.join(
-    os.path.dirname(os.path.abspath(__file__)), 'previous_inverted.png'))
+    play_image_inv = PhotoImage(file=os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), 'play_inverted.png'))
 
-previous_btn = Button(root, image=previous_image, command=previousBtnAction)
-previous_btn.configure(relief="sunken", borderwidth=0,
-                       background='#121212', activebackground='#121212')
-previous_btn.place(relx=0.05, rely=0.2, anchor=CENTER)
+    pause_image = PhotoImage(file=os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), 'pause.png'))
+
+    pause_image_inv = PhotoImage(file=os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), 'pause_inverted.png'))
+
+    play_pause_btn = Button(root, image=play_image, command=playBtnAction)
+    play_pause_btn.configure(relief="sunken", borderwidth=0,
+                            background='#121212', activebackground='#121212')
+    play_pause_btn.place(relx=0.15, rely=0.2, anchor=CENTER)
+
+    forward_image = PhotoImage(file=os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), 'forward.png'))
+
+    forward_image_inv = PhotoImage(file=os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), 'forward_inverted.png'))
+
+    forward_btn = Button(root, image=forward_image, command=forwardBtnAction)
+    forward_btn.configure(relief="sunken", borderwidth=0,
+                        background='#121212', activebackground='#121212')
+    forward_btn.place(relx=0.25, rely=0.2, anchor=CENTER)
 
 
-trueShuffle_btn = Button(root, text="True Shuffle: On",
-                         command=trueShuffle, padx=6, pady=6, font=("Corbel", 10))
-trueShuffle_btn.configure(background='#121212',relief="groove", borderwidth=0, activeforeground='grey', activebackground='#121212', foreground='#2dd128')
-def on_enter_shuffle(e):
-    trueShuffle_btn.configure(borderwidth=1)
-def on_leave_shuffle(e):
-    trueShuffle_btn.configure(borderwidth=0)
-trueShuffle_btn.bind("<Enter>", on_enter_shuffle)
-trueShuffle_btn.bind("<Leave>", on_leave_shuffle)
+    previous_image = PhotoImage(file=os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), 'previous.png'))
 
-trueShuffle_btn.place(relx=0.99, rely=0.5, anchor=E,
-                      relwidth=0.15, relheight=0.15)
+    previous_image_inv = PhotoImage(file=os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), 'previous_inverted.png'))
 
-root.bind("<KeyPress>", on_key_press)
-root.bind("<space>", playBtnAction)
-root.bind("<Configure>", updateSize)
-root.protocol("WM_DELETE_WINDOW", onClosing)
-root.bind("<Unmap>", onMinimize)
-root.bind("<Button-1>", set_focus)
+    previous_btn = Button(root, image=previous_image, command=previousBtnAction)
+    previous_btn.configure(relief="sunken", borderwidth=0,
+                        background='#121212', activebackground='#121212')
+    previous_btn.place(relx=0.05, rely=0.2, anchor=CENTER)
 
-SystemTrayThread = threading.Thread(target=pystrayTray)
-SystemTrayThread.daemon = True
-SystemTrayThread.start()
-root.mainloop()
+
+    trueShuffle_btn = Button(root, text="True Shuffle: On",
+                            command=trueShuffle, padx=6, pady=6, font=("Corbel", 10))
+    trueShuffle_btn.configure(background='#121212',relief="groove", borderwidth=0, activeforeground='grey', activebackground='#121212', foreground='#2dd128')
+    def on_enter_shuffle(e: object) -> None:
+        trueShuffle_btn.configure(borderwidth=1)
+    def on_leave_shuffle(e: object) -> None:
+        trueShuffle_btn.configure(borderwidth=0)
+    trueShuffle_btn.bind("<Enter>", on_enter_shuffle)
+    trueShuffle_btn.bind("<Leave>", on_leave_shuffle)
+
+    trueShuffle_btn.place(relx=0.99, rely=0.5, anchor=E,
+                        relwidth=0.15, relheight=0.15)
+
+    root.bind("<KeyPress>", on_key_press)
+    root.bind("<space>", playBtnAction)
+    root.bind("<Configure>", updateSize)
+    root.protocol("WM_DELETE_WINDOW", onClosing)
+    root.bind("<Unmap>", onMinimize)
+    root.bind("<Button-1>", set_focus)
+
+    SystemTrayThread = threading.Thread(target=pystrayTray)
+    SystemTrayThread.daemon = True
+    SystemTrayThread.start()
+    root.mainloop()
