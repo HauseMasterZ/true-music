@@ -532,6 +532,7 @@ def playerEnd() -> None:
     global repeat_flag, auto_play_flag
     if repeat_flag:
         player.delete()
+        player.seek(0.0)
         player.play()
     elif auto_play_flag:
         threadAction()
