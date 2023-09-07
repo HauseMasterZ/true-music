@@ -112,7 +112,7 @@ def changeTheme() -> None:
         autoplay_btn.configure(background='White', foreground='Black',activebackground='White')
         always_on_top_btn.configure(background='White', foreground='Black', activebackground='White')
         repeat_btn.configure(background='White', foreground='Black', activebackground='White')
-        search_box.configure(background='#F5F5F5')
+        search_box.configure(background='#F5F5F5', foreground='#16161d')
         selectDirectory.configure(background='White', foreground='Black',activebackground='White')
         trueShuffle_btn.configure(background='White', foreground='Black' if not shuffle_flag else "#2dd128",activebackground='White')
     else:
@@ -120,7 +120,7 @@ def changeTheme() -> None:
         refresh_btn.configure(background='#121212', foreground='White', activebackground='#121212', activeforeground='Grey')
         root.configure(background='#121212')
         arrow_lbl.configure(background='#121212', foreground='White')
-        search_box.configure(background='#3f3f40')
+        search_box.configure(background='#3f3f40', foreground='White')
         title.configure(background="#121212", foreground="White")
         theme_btn.configure(text="Theme: Dark", background='#121212',
                             foreground='white', activebackground='#121212', activeforeground='gray')
@@ -328,7 +328,7 @@ def autoRepeat() -> None:
                                 relief=RIDGE)
 
 # Function to get all the files in the directory including the subdirectories
-def get_all_files(folder_path: str) -> tuple(list[str], int):
+def get_all_files(folder_path: str) -> tuple:
     global on_close, clear_flag
     all_files = []
     file_count = 0
@@ -343,8 +343,6 @@ def get_all_files(folder_path: str) -> tuple(list[str], int):
     except PermissionError:
         return [], -1
     return all_files, file_count
-
-
 
 # File Picker Open
 def openFilePicker() -> None:
@@ -388,7 +386,6 @@ def merge_sorted_lists(list1: list[str], list2: list[str], date: bool = False) -
     merged_list.extend(list2[j:])
     return merged_list
 
-
 # Search File In Directory
 def loadMusicThread() -> None:
     global number_of_files, Directory, dir_musics
@@ -426,7 +423,6 @@ def loadDateModified(all_paths: list[str]) -> None:
     if not on_close:
         drop_down['values'] = tuple(alphabetical_list) if not date_modified_flag else tuple(date_modified_list)
 
-
 # Clear Directory
 def clearDirectory() -> None:
     global clear_flag, number_of_files, Directory, alphabetical_list, date_modified_list
@@ -457,7 +453,6 @@ def rememberPathBtnAction() -> None:
     else:
         remember_btn.configure(text='Store Path: Enabled')
     remember_flag = not remember_flag
-
 
 # Store Path
 def storePath() -> None:
@@ -749,8 +744,10 @@ def search_play_song(event: object=None) -> None:
     if search_song.get().strip() == 'No items match your search' or not search_song.get().strip():
         return # If search box is empty, do nothing
     global date_modified_cnt, date_modified_flag
-    if date_modified_flag:
+    if drop_down['values'] == tuple(date_modified_list):
         date_modified_cnt = event.widget.current() + 1
+    else:
+        date_modified_cnt = 0
     player.delete()
     player.pause()
     selected_value = search_song.get()
@@ -758,7 +755,6 @@ def search_play_song(event: object=None) -> None:
     play_thread = threading.Thread(target=threadAction, args=(False, selected_file_path))
     play_thread.daemon = True
     play_thread.start()
-
 
 def search(event: object=None) -> None:
     global date_modified_list, alphabetical_list, date_modified_flag
@@ -781,7 +777,7 @@ def search(event: object=None) -> None:
 def on_entry_click(event: object=None) -> None:
     if search_box.get() == 'Press Enter To Search':
         search_box.delete(0, "end")  # Remove the placeholder text
-        search_box.configure(foreground='White') if theme_btn.cget('text') == 'Theme: Dark' else search_box.configure(foreground='#16161d')  # Change text color to #121212
+        search_box.configure(foreground='White') if theme_btn.cget('text') == 'Theme: Dark' else search_box.configure(foreground='#16161d') # Set the text color to black
 
 def on_entry_leave(event=None):
     if search_box.get() == '':
