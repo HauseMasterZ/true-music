@@ -254,21 +254,16 @@ def autoPlay() -> None:
     if auto_play_flag:
         auto_play_flag = False
         menu_items[3] = pystray.MenuItem('Autoplay: Off', on_click)
-        icon.menu = pystray.Menu(*menu_items)
         autoplay_btn.config(text="Autoplay: Disabled",
                             relief=RIDGE)
     else:
         auto_play_flag = True
         menu_items[3] = pystray.MenuItem('Autoplay: On', on_click)
-        icon.menu = pystray.Menu(*menu_items)
         autoplay_btn.config(text="Autoplay: Enabled",
                             relief=SUNKEN)
         if repeat_flag:
-            repeat_flag = False
-            repeat_btn.configure(
-                text='Repeat: Disabled', relief=RIDGE)
-            menu_items[2] = pystray.MenuItem('Repeat: Off', on_click)
-            icon.menu = pystray.Menu(*menu_items)
+            autoRepeat()
+    icon.menu = pystray.Menu(*menu_items)
 
 # Always On Top
 def alwaysOnTop() -> None:
@@ -287,23 +282,19 @@ def alwaysOnTop() -> None:
 # Shuffle Button
 def trueShuffle() -> None:
     global shuffle_flag, date_modified_flag
-    if date_modified_flag:
-        date_modified_flag = False
-        date_modified_btn.configure(
-            text='Date Modified: Disabled')
-        drop_down['values'] = tuple(alphabetical_list)
     if shuffle_flag:
         shuffle_flag = False
         menu_items[1] = pystray.MenuItem('True Shuffle: Off', on_click)
-        icon.menu = pystray.Menu(*menu_items)
         trueShuffle_btn.configure(
             text='True Shuffle: Off', relief=RIDGE, foreground='White' if theme_btn.cget('text') == 'Theme: Dark' else 'Black')
     else:
         shuffle_flag = True
         menu_items[1] = pystray.MenuItem('True Shuffle: On', on_click)
-        icon.menu = pystray.Menu(*menu_items)
         trueShuffle_btn.configure(
             text='True Shuffle: On', relief=SUNKEN, foreground='#2dd128')
+        if date_modified_flag:
+            date_modified_btn_action()
+    icon.menu = pystray.Menu(*menu_items)
 
 # Auto Repeat
 def autoRepeat() -> None:
@@ -311,21 +302,16 @@ def autoRepeat() -> None:
     if repeat_flag:
         repeat_flag = False
         menu_items[2] = pystray.MenuItem('Repeat: Off', on_click)
-        icon.menu = pystray.Menu(*menu_items)
         repeat_btn.configure(text='Repeat: Disabled',
                              relief=RIDGE)
     else:
         repeat_flag = True
         menu_items[2] = pystray.MenuItem('Repeat: On', on_click)
-        icon.menu = pystray.Menu(*menu_items)
         repeat_btn.configure(text='Repeat: Enabled',
                              relief=SUNKEN)
         if auto_play_flag:
-            auto_play_flag = False
-            menu_items[3] = pystray.MenuItem('Autoplay: Off', on_click)
-            icon.menu = pystray.Menu(*menu_items)
-            autoplay_btn.config(text="Autoplay: Disabled",
-                                relief=RIDGE)
+            autoPlay()
+    icon.menu = pystray.Menu(*menu_items)
 
 # Function to get all the files in the directory including the subdirectories
 def get_all_files(folder_path: str) -> tuple:
@@ -489,7 +475,6 @@ def playBtnAction(event: object=None) -> None:
     if player.playing:
         player.pause()
         menu_items[5] = pystray.MenuItem('Play', on_click)
-        icon.menu = pystray.Menu(*menu_items)
         music_bar.state(['disabled'])
         play_pause_btn.configure(image=play_image) if theme_btn.cget(
             'text') == 'Theme: Dark' else play_pause_btn.configure(image=play_image_inv)
@@ -503,11 +488,11 @@ def playBtnAction(event: object=None) -> None:
             volume_bar.set(100)
             volume_val.configure(text='50')
         menu_items[5] = pystray.MenuItem('Pause', on_click)
-        icon.menu = pystray.Menu(*menu_items)
         music_bar.state(['!disabled'])
         play_pause_btn.configure(image=pause_image) if theme_btn.cget(
             'text') == 'Theme: Dark' else play_pause_btn.configure(image=pause_image_inv)
     icon.title = ("[Playing] " if player.playing else "[Paused] ") + file_name[:75]
+    icon.menu = pystray.Menu(*menu_items)
 
 # forward button action
 def forwardBtnAction() -> None:
@@ -725,19 +710,15 @@ def update_seekbar() -> None:
 
 def date_modified_btn_action() -> None:
     global date_modified_flag, date_modified_cnt, shuffle_flag, alphabetical_list , date_modified_list
-    date_modified_cnt = 0
-    if shuffle_flag:
-        shuffle_flag = False
-        trueShuffle_btn.configure(
-            text='True Shuffle: Off', foreground='white' if theme_btn.cget('text') == 'Theme: Dark' else 'black')
-        menu_items[1] = pystray.MenuItem('True Shuffle: Off', on_click)
-        icon.menu = pystray.Menu(*menu_items)        
+    date_modified_cnt = 0  
     if date_modified_flag:
         drop_down['values'] = tuple(alphabetical_list)
         date_modified_btn.configure(text="Date Modified: Disabled")
     else:
         drop_down['values'] = tuple(date_modified_list)
         date_modified_btn.configure(text="Date Modified: Enabled")
+        if shuffle_flag:
+            trueShuffle()
     date_modified_flag = not date_modified_flag
 
 
@@ -824,16 +805,15 @@ def hotkeys() -> None:
     if hotkey_flag:
         hotkey_flag = False
         menu_items[7] = pystray.MenuItem('Hotkeys: Off', on_click)
-        icon.menu = pystray.Menu(*menu_items)
         hotkey_btn.configure(text="Hotkeys: Off")
     else:
         hotkey_flag = True
         menu_items[7] = pystray.MenuItem('Hotkeys: On', on_click)
-        icon.menu = pystray.Menu(*menu_items)
         hotkey_btn.configure(text="Hotkeys: On")
         mediaKeysThread = threading.Thread(target=checkMediaKeys)
         mediaKeysThread.daemon = True
         mediaKeysThread.start()
+    icon.menu = pystray.Menu(*menu_items)
 
 def on_click(icon: pystray.Icon, item: pystray.MenuItem) -> None:
     global on_close
