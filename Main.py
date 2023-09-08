@@ -485,8 +485,8 @@ def playBtnAction(event: object=None) -> None:
             return
         if player.volume <= 0:
             player.volume = 1.0
-            volume_bar.set(100)
-            volume_val.configure(text='50')
+            volume_bar.set(0)
+            volume_val.configure(text='100')
         menu_items[5] = pystray.MenuItem('Pause', on_click)
         music_bar.state(['!disabled'])
         play_pause_btn.configure(image=pause_image) if theme_btn.cget(
@@ -644,6 +644,8 @@ def on_volume_change(event: object) -> None:
 
 # Seekbar update
 def seek_tap(event: object) -> None:
+    if music_bar.state() and music_bar.state()[0] == 'disabled':
+        return
     seek_position = event.x / (root.winfo_width()/3)
     total_time = player.source.duration
     player.delete()
