@@ -781,7 +781,7 @@ def threadAction(prev_flag: bool = False, search_file: str = None) -> None:
                 )
         except Exception:
             print(Exception)
-        
+            return
     music_bar.state(["!disabled"])
     play_pause_btn.configure(image=pause_image) if theme_btn.cget(
         "text"
