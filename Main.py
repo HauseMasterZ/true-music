@@ -4,6 +4,7 @@ if os.path.exists(
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "window.lock")
 ):
     import sys
+
     sys.exit(0)
 with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "window.lock"), "w"):
     pass
@@ -38,10 +39,12 @@ from tkinter import (
 import PIL.Image
 import pyglet
 import pystray
-from plyer import notification
+
+
+# Create a ToastNotifier object
 from pynput import keyboard
 
-
+is_windows = os.name == "nt"
 # Functions
 class CreateToolTip(object):
     """
@@ -112,6 +115,7 @@ def changeTheme() -> None:
     This function updates the background color, foreground color, and images of various widgets to match the selected theme.
     """
     global shuffle_flag
+    root.focus()
     if theme_btn.cget("text") == "Theme: Dark":
         root.configure(background="White")
         arrow_lbl.configure(background="White", foreground="Black")
@@ -180,7 +184,10 @@ def changeTheme() -> None:
         repeat_btn.configure(
             background="White", foreground="Black", activebackground="White"
         )
-        search_box.configure(background="#F5F5F5", foreground="#16161d")
+        if search_box.get() != "Press Enter To Search":
+            search_box.configure(background="#F5F5F5", foreground="#16161d")
+        else:
+            search_box.configure(background="#F5F5F5")
         selectDirectory.configure(
             background="White", foreground="Black", activebackground="White"
         )
@@ -204,7 +211,10 @@ def changeTheme() -> None:
         )
         root.configure(background="#121212")
         arrow_lbl.configure(background="#121212", foreground="White")
-        search_box.configure(background="#3f3f40", foreground="White")
+        if search_box.get() != "Press Enter To Search":
+            search_box.configure(background="#3f3f40", foreground="White")
+        else:
+            search_box.configure(background="#3f3f40")
         title.configure(background="#121212", foreground="White")
         theme_btn.configure(
             text="Theme: Dark",
@@ -292,6 +302,7 @@ first_flag = True
 date_modified_flag = False
 clear_flag = False
 hotkey_flag = False
+notification_flag = False
 file_name = ""
 alphabetical_list = []
 date_modified_list = []
@@ -301,6 +312,12 @@ date_modified_cnt = 0
 corrupt_flag = False
 prev_corrupt_flag = False
 played = set()
+
+if is_windows:
+    from win10toast import ToastNotifier
+    toaster = ToastNotifier()
+else:
+    from plyer import notification
 
 
 # Random Number Generator
@@ -381,22 +398,27 @@ def secure_generator(prev_flag: bool = False, search_file: str = None) -> str:
 # Autoplay
 def autoPlay() -> None:
     global auto_play_flag, repeat_flag
+    root.focus()
+    autoplay_index = menu_items.index(
+        next(item for item in menu_items if "Autoplay" in item.text)
+    )
     if auto_play_flag:
         auto_play_flag = False
-        menu_items[3] = pystray.MenuItem("Autoplay: Off", on_click)
+        menu_items[autoplay_index] = pystray.MenuItem("Autoplay: Off", on_click)
         autoplay_btn.config(text="Autoplay: Disabled", relief=RIDGE)
     else:
         auto_play_flag = True
-        menu_items[3] = pystray.MenuItem("Autoplay: On", on_click)
+        menu_items[autoplay_index] = pystray.MenuItem("Autoplay: On", on_click)
         autoplay_btn.config(text="Autoplay: Enabled", relief=SUNKEN)
         if repeat_flag:
             autoRepeat()
-    icon.menu = pystray.Menu(*menu_items)
+    tray_icon.menu = pystray.Menu(*menu_items)
 
 
 # Always On Top
 def alwaysOnTop() -> None:
     global always_on_top_flag
+    root.focus()
     if always_on_top_flag:
         root.attributes("-topmost", False)
         always_on_top_flag = False
@@ -410,9 +432,13 @@ def alwaysOnTop() -> None:
 # Shuffle Button
 def trueShuffle() -> None:
     global shuffle_flag, date_modified_flag
+    root.focus()
+    shuffle_index = menu_items.index(
+        next(item for item in menu_items if "True Shuffle" in item.text)
+    )
     if shuffle_flag:
         shuffle_flag = False
-        menu_items[1] = pystray.MenuItem("True Shuffle: Off", on_click)
+        menu_items[shuffle_index] = pystray.MenuItem("True Shuffle: Off", on_click)
         trueShuffle_btn.configure(
             text="True Shuffle: Off",
             relief=RIDGE,
@@ -420,29 +446,33 @@ def trueShuffle() -> None:
         )
     else:
         shuffle_flag = True
-        menu_items[1] = pystray.MenuItem("True Shuffle: On", on_click)
+        menu_items[shuffle_index] = pystray.MenuItem("True Shuffle: On", on_click)
         trueShuffle_btn.configure(
             text="True Shuffle: On", relief=SUNKEN, foreground="#2dd128"
         )
         if date_modified_flag:
             date_modified_btn_action()
-    icon.menu = pystray.Menu(*menu_items)
+    tray_icon.menu = pystray.Menu(*menu_items)
 
 
 # Auto Repeat
 def autoRepeat() -> None:
     global repeat_flag, auto_play_flag
+    root.focus()
+    repeat_index = menu_items.index(
+        next(item for item in menu_items if "Repeat" in item.text)
+    )
     if repeat_flag:
         repeat_flag = False
-        menu_items[2] = pystray.MenuItem("Repeat: Off", on_click)
+        menu_items[repeat_index] = pystray.MenuItem("Repeat: Off", on_click)
         repeat_btn.configure(text="Repeat: Disabled", relief=RIDGE)
     else:
         repeat_flag = True
-        menu_items[2] = pystray.MenuItem("Repeat: On", on_click)
+        menu_items[repeat_index] = pystray.MenuItem("Repeat: On", on_click)
         repeat_btn.configure(text="Repeat: Enabled", relief=SUNKEN)
         if auto_play_flag:
             autoPlay()
-    icon.menu = pystray.Menu(*menu_items)
+    tray_icon.menu = pystray.Menu(*menu_items)
 
 
 # Function to get all the files in the directory including the subdirectories
@@ -559,6 +589,7 @@ def loadDateModified(all_paths: list[str]) -> None:
             else tuple(date_modified_list)
         )
 
+
 # Clear Directory
 def clearDirectory() -> None:
     global clear_flag, number_of_files, Directory, alphabetical_list, date_modified_list
@@ -578,8 +609,9 @@ def clearDirectory() -> None:
     changeDirectoryBoxHeight()
     clear_flag = True
     number_of_files = 0
-    icon.title = "True Music"
+    tray_icon.title = "True Music"
     Directory = ""
+
 
 # Remember Path
 def rememberPathBtnAction() -> None:
@@ -589,6 +621,7 @@ def rememberPathBtnAction() -> None:
     else:
         remember_btn.configure(text="Store Path: Enabled")
     remember_flag = not remember_flag
+
 
 # Store Path
 def storePath() -> None:
@@ -606,6 +639,7 @@ def storePath() -> None:
         else:
             writeEmptyData()
 
+
 # Size Update Function
 def updateSize(event: object) -> None:
     music_bar.configure(to=root.winfo_width() // 3)
@@ -613,6 +647,7 @@ def updateSize(event: object) -> None:
     now_playing.configure(
         font=("Aerial", (root.winfo_width() + root.winfo_height()) // 100)
     )
+
 
 # Play button action
 def playBtnAction(event: object = None) -> None:
@@ -624,9 +659,12 @@ def playBtnAction(event: object = None) -> None:
         or first_flag
     ):
         return
+    play_index = menu_items.index(
+        next(item for item in menu_items if "Play" in item.text)
+    )
     if player.playing:
         player.pause()
-        menu_items[5] = pystray.MenuItem("Play", on_click)
+        menu_items[play_index] = pystray.MenuItem("Play", on_click)
         music_bar.state(["disabled"])
         play_pause_btn.configure(image=play_image) if theme_btn.cget(
             "text"
@@ -640,13 +678,13 @@ def playBtnAction(event: object = None) -> None:
             player.volume = 1.0
             volume_bar.set(0)
             volume_val.configure(text="100")
-        menu_items[5] = pystray.MenuItem("Pause", on_click)
+        menu_items[play_index] = pystray.MenuItem("Pause", on_click)
         music_bar.state(["!disabled"])
         play_pause_btn.configure(image=pause_image) if theme_btn.cget(
             "text"
         ) == "Theme: Dark" else play_pause_btn.configure(image=pause_image_inv)
-    icon.title = ("[Playing] " if player.playing else "[Paused] ") + file_name[:75]
-    icon.menu = pystray.Menu(*menu_items)
+    tray_icon.title = ("[Playing] " if player.playing else "[Paused] ") + file_name[:75]
+    tray_icon.menu = pystray.Menu(*menu_items)
 
 
 # forward button action
@@ -687,7 +725,7 @@ def playerEnd() -> None:
 
 # Play Music
 def threadAction(prev_flag: bool = False, search_file: str = None) -> None:
-    global first_flag, file_name, clear_flag, corrupt_flag, date_modified_flag, date_modified_cnt, number_of_files
+    global first_flag, file_name, clear_flag, corrupt_flag, date_modified_flag, date_modified_cnt, number_of_files, notification_flag, is_windows
     if clear_flag:
         music_bar.set(0)
         player.pause()
@@ -720,17 +758,30 @@ def threadAction(prev_flag: bool = False, search_file: str = None) -> None:
         if corrupt_flag or file_name is None:
             music_bar.state(["disabled"])
             return
-    if not root.winfo_ismapped() and hotkey_flag:
-        notification.notify(
-            title="Now Playing",
-            message=file_name[:75],
-            app_icon=os.path.join(
-                os.path.dirname(os.path.abspath(__file__)), "resurrection.ico"
-            ),
-            timeout=1,
-            toast=False,
-            app_name="True Music",
-        )
+    if notification_flag:
+        try:
+            if is_windows:
+                toaster.show_toast(
+                    title="Now Playing",
+                    msg=file_name[:75],
+                    duration=3,
+                    threaded=True,
+                    icon_path=os.path.join(
+                        os.path.dirname(os.path.abspath(__file__)), "resurrection.ico"
+                    ),
+                )
+            else:
+                # For some dumb reason pyler's notify method is messing with system tray icon and creating ghost icons every time a new notifcation appears
+                notification.notify(
+                    title="Now Playing",
+                    message=file_name[:75],
+                    app_icon=os.path.join(
+                        os.path.dirname(os.path.abspath(__file__)), "resurrection.ico"
+                    ),
+                )
+        except Exception:
+            print(Exception)
+        
     music_bar.state(["!disabled"])
     play_pause_btn.configure(image=pause_image) if theme_btn.cget(
         "text"
@@ -740,12 +791,28 @@ def threadAction(prev_flag: bool = False, search_file: str = None) -> None:
     try:
         player.seek(0.0)
         player.play()
-        icon.title = ("[Playing] " if player.playing else "[Paused] ") + file_name[:75]
+        tray_icon.title = ("[Playing] " if player.playing else "[Paused] ") + file_name[
+            :75
+        ]
     except:
         pass
     mins = track_length // 60
     secs = track_length % 60
     length_of_music.configure(text=f"{mins}:{secs:02d}")
+
+
+def notificationAction() -> None:
+    global notification_flag
+    notification_index = menu_items.index(
+        next(item for item in menu_items if "Notify" in item.text)
+    )
+    if notification_flag:
+        notification_flag = False
+        menu_items[notification_index] = pystray.MenuItem("Notify: Off", on_click)
+    else:
+        notification_flag = True
+        menu_items[notification_index] = pystray.MenuItem("Notify: On", on_click)
+    tray_icon.menu = pystray.Menu(*menu_items)
 
 
 def writeEmptyData() -> None:
@@ -1019,18 +1086,22 @@ def set_focus(event: object = None) -> None:
 
 def hotkeys() -> None:
     global hotkey_flag
+    root.focus()
+    hotkey_index = menu_items.index(
+        next(item for item in menu_items if "Hotkeys" in item.text)
+    )
     if hotkey_flag:
         hotkey_flag = False
-        menu_items[7] = pystray.MenuItem("Hotkeys: Off", on_click)
+        menu_items[hotkey_index] = pystray.MenuItem("Hotkeys: Off", on_click)
         hotkey_btn.configure(text="Hotkeys: Off")
     else:
         hotkey_flag = True
-        menu_items[7] = pystray.MenuItem("Hotkeys: On", on_click)
+        menu_items[hotkey_index] = pystray.MenuItem("Hotkeys: On", on_click)
         hotkey_btn.configure(text="Hotkeys: On")
         mediaKeysThread = threading.Thread(target=checkMediaKeys)
         mediaKeysThread.daemon = True
         mediaKeysThread.start()
-    icon.menu = pystray.Menu(*menu_items)
+    tray_icon.menu = pystray.Menu(*menu_items)
 
 
 def on_click(icon: pystray.Icon, item: pystray.MenuItem) -> None:
@@ -1055,6 +1126,8 @@ def on_click(icon: pystray.Icon, item: pystray.MenuItem) -> None:
         autoPlay()
     elif item.text == "Hotkeys: On" or item.text == "Hotkeys: Off":
         hotkeys()
+    elif item.text == "Notify: On" or item.text == "Notify: Off":
+        notificationAction()
 
 
 def showRoot(icon: pystray.Icon = None, item: pystray.MenuItem = None) -> None:
@@ -1066,7 +1139,7 @@ def showRoot(icon: pystray.Icon = None, item: pystray.MenuItem = None) -> None:
         root.focus_force()
 
 
-icon = pystray.Icon(
+tray_icon = pystray.Icon(
     icon=PIL.Image.open(
         os.path.join(os.path.dirname(os.path.abspath(__file__)), "resurrection.ico")
     ),
@@ -1078,6 +1151,7 @@ menu_items = [
     pystray.MenuItem("Show/Hide", action=showRoot, default=True),
     pystray.MenuItem("True Shuffle: On", on_click),
     pystray.MenuItem("Repeat: Off", on_click),
+    pystray.MenuItem("Notify: Off", on_click),
     pystray.MenuItem("Autoplay: On", on_click),
     pystray.MenuItem("Next Track", on_click),
     pystray.MenuItem("Pause", on_click),
@@ -1088,11 +1162,11 @@ menu_items = [
 
 
 def pystrayTray() -> None:
-    global icon, shuffle_flag
-    icon.menu = pystray.Menu(*menu_items)
+    global shuffle_flag
+    tray_icon.menu = pystray.Menu(*menu_items)
     try:
-        icon.run()
-        # icon.run_detached()
+        tray_icon.run()
+        # tray_icon.run_detached()
     except:
         return
     onClosing()
@@ -1133,13 +1207,13 @@ store_path_thread = threading.Thread(target=storePath)
 
 
 def onClosing() -> None:
-    global on_close, Directory, icon
+    global on_close, Directory, tray_icon
     os.remove(os.path.join(os.path.dirname(os.path.abspath(__file__)), "window.lock"))
     store_path_thread.start()
     try:
         Directory = root.call(directory_box, "get", "1.0", "end-1c")
         on_close = True
-        icon.stop()
+        tray_icon.stop()
         played.clear()
         player.pause()
         pyglet.app.exit()
@@ -1155,7 +1229,6 @@ if __name__ == "__main__":
     root.configure(background="#121212")
     root.title("True Music")
     root.withdraw()
-    is_windows = os.name == "nt"
 
     try:
         if is_windows:
@@ -1569,7 +1642,6 @@ if __name__ == "__main__":
     root.protocol("WM_DELETE_WINDOW", onClosing)
     root.bind("<Unmap>", onMinimize)
     root.bind("<Button-1>", set_focus)
-
     SystemTrayThread = threading.Thread(target=pystrayTray)
     SystemTrayThread.daemon = True
     SystemTrayThread.start()
