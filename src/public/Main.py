@@ -39,13 +39,9 @@ from tkinter import (
 import PIL.Image
 import pyglet
 import pystray
-
-
-# Create a ToastNotifier object
 from pynput import keyboard
 
 is_windows = os.name == "nt"
-# Functions
 class CreateToolTip(object):
     """
     create a tooltip for a given widget
@@ -107,7 +103,6 @@ class CreateToolTip(object):
             tw.destroy()
 
 
-# Theme Button Action
 def changeTheme() -> None:
     """
     Changes the theme of the application between light and dark mode.
@@ -320,7 +315,6 @@ else:
     from plyer import notification
 
 
-# Random Number Generator
 def secure_generator(prev_flag: bool = False, search_file: str = None) -> str:
     """
     Generates a secure random number to select a music file.
@@ -395,7 +389,6 @@ def secure_generator(prev_flag: bool = False, search_file: str = None) -> str:
         return os.path.basename(search_file)
 
 
-# Autoplay
 def autoPlay() -> None:
     global auto_play_flag, repeat_flag
     root.focus()
@@ -415,7 +408,6 @@ def autoPlay() -> None:
     tray_icon.menu = pystray.Menu(*menu_items)
 
 
-# Always On Top
 def alwaysOnTop() -> None:
     global always_on_top_flag
     root.focus()
@@ -429,7 +421,6 @@ def alwaysOnTop() -> None:
         always_on_top_btn.configure(text="Always On Top: Enabled", relief=SUNKEN)
 
 
-# Shuffle Button
 def trueShuffle() -> None:
     global shuffle_flag, date_modified_flag
     root.focus()
@@ -455,7 +446,6 @@ def trueShuffle() -> None:
     tray_icon.menu = pystray.Menu(*menu_items)
 
 
-# Auto Repeat
 def autoRepeat() -> None:
     global repeat_flag, auto_play_flag
     root.focus()
@@ -475,8 +465,19 @@ def autoRepeat() -> None:
     tray_icon.menu = pystray.Menu(*menu_items)
 
 
-# Function to get all the files in the directory including the subdirectories
 def get_all_files(folder_path: str) -> tuple:
+    """
+    Returns a tuple containing a list of all audio files in the given folder path and its subdirectories,
+    and the total number of audio files found.
+
+    Args:
+    - folder_path (str): The path of the folder to search for audio files.
+
+    Returns:
+    - tuple: A tuple containing a list of all audio files in the given folder path and its subdirectories,
+    and the total number of audio files found. If the function encounters a PermissionError while searching
+    for files, it returns an empty list and -1 as the file count.
+    """
     global on_close, clear_flag
     all_files = []
     file_count = 0
@@ -493,8 +494,11 @@ def get_all_files(folder_path: str) -> tuple:
     return all_files, file_count
 
 
-# File Picker Open
 def openFilePicker() -> None:
+    """
+    Opens a file dialog to select a directory and loads music files from the selected directory.
+    If the selected directory already exists, displays a warning message.
+    """
     global dir_musics, Directory, clear_flag, first_flag
     if first_flag:
         now_playing.configure(text="Now Playing: Please Wait...")
@@ -519,6 +523,18 @@ def openFilePicker() -> None:
 def merge_sorted_lists(
     list1: list[str], list2: list[str], date: bool = False
 ) -> list[str]:
+    """
+    Merges two sorted lists of strings into a single sorted list.
+
+    Args:
+        list1 (list[str]): The first sorted list of strings.
+        list2 (list[str]): The second sorted list of strings.
+        date (bool, optional): If True, the function will sort the lists based on the creation time of the files
+        that the strings represent. Defaults to False.
+
+    Returns:
+        list[str]: A single sorted list of strings that contains all the elements from list1 and list2.
+    """
     merged_list = []
     i, j = 0, 0
     while i < len(list1) and j < len(list2):
@@ -532,7 +548,7 @@ def merge_sorted_lists(
         else:
             file_path1 = list1[i].split("#|#")[1]
             file_path2 = list2[j].split("#|#")[1]
-            if os.path.getctime(file_path1) > os.path.getctime(file_path2):
+            if os.stat(file_path1).st_ctime > os.stat(file_path2).st_ctime:
                 merged_list.append(list1[i])
                 i += 1
             else:
@@ -543,8 +559,20 @@ def merge_sorted_lists(
     return merged_list
 
 
-# Search File In Directory
 def loadMusicThread() -> None:
+    """
+    Loads music files from the specified directory and updates the UI.
+
+    If no music files are found in the directory, or if permission is denied to access the directory,
+    an error message is displayed.
+
+    If the music player is currently disabled, this function will start the player.
+
+    This function also starts a separate thread to load the date modified information for the music files.
+
+    Returns:
+        None
+    """
     global number_of_files, Directory, dir_musics
     Directory.replace("/", "//")
     tmp, tmp_num = get_all_files(Directory)
@@ -568,7 +596,6 @@ def loadMusicThread() -> None:
     changeDirectoryBoxHeight()
 
 
-# date modified sort
 def loadDateModified(all_paths: list[str]) -> None:
     global date_modified_list, on_close, date_modified_flag, alphabetical_list
     tmp = []
@@ -590,7 +617,6 @@ def loadDateModified(all_paths: list[str]) -> None:
         )
 
 
-# Clear Directory
 def clearDirectory() -> None:
     global clear_flag, number_of_files, Directory, alphabetical_list, date_modified_list
     search_box.delete(0, END)
@@ -613,7 +639,6 @@ def clearDirectory() -> None:
     Directory = ""
 
 
-# Remember Path
 def rememberPathBtnAction() -> None:
     global remember_flag
     if remember_flag:
@@ -623,12 +648,10 @@ def rememberPathBtnAction() -> None:
     remember_flag = not remember_flag
 
 
-# Store Path
 def storePath() -> None:
     global number_of_files, data_file, Directory
     with open(data_file, "w", encoding="utf-8") as f:
         if remember_flag and not first_flag:
-            refreshBtnAction(Directory)
             data = {
                 "number_of_files": number_of_files,
                 "Directory": Directory,
@@ -640,7 +663,6 @@ def storePath() -> None:
             writeEmptyData()
 
 
-# Size Update Function
 def updateSize(event: object) -> None:
     music_bar.configure(to=root.winfo_width() // 3)
     title.configure(font=("Corbel", (root.winfo_width() + root.winfo_height()) // 50))
@@ -649,7 +671,6 @@ def updateSize(event: object) -> None:
     )
 
 
-# Play button action
 def playBtnAction(event: object = None) -> None:
     global play_image, pause_image, clear_flag, file_name, first_flag
     if (
@@ -687,7 +708,6 @@ def playBtnAction(event: object = None) -> None:
     tray_icon.menu = pystray.Menu(*menu_items)
 
 
-# forward button action
 def forwardBtnAction() -> None:
     try:
         player.pause()
@@ -697,7 +717,6 @@ def forwardBtnAction() -> None:
     threadAction()
 
 
-# backward button action
 def previousBtnAction() -> None:
     try:
         player.delete()
@@ -707,7 +726,6 @@ def previousBtnAction() -> None:
     threadAction(True)
 
 
-# on play end
 def playerEnd() -> None:
     global repeat_flag, auto_play_flag
     if repeat_flag:
@@ -723,7 +741,6 @@ def playerEnd() -> None:
         ) == "Theme: Dark" else play_pause_btn.configure(image=play_image_inv)
 
 
-# Play Music
 def threadAction(prev_flag: bool = False, search_file: str = None) -> None:
     global first_flag, file_name, clear_flag, corrupt_flag, date_modified_flag, date_modified_cnt, number_of_files, notification_flag, is_windows
     if clear_flag:
@@ -767,7 +784,7 @@ def threadAction(prev_flag: bool = False, search_file: str = None) -> None:
                     duration=3,
                     threaded=True,
                     icon_path=os.path.join(
-                        os.path.dirname(os.path.abspath(__file__)), "resurrection.ico"
+                        os.path.dirname(os.path.abspath(__file__)), '..', 'static', "resurrection.ico"
                     ),
                 )
             else:
@@ -776,7 +793,7 @@ def threadAction(prev_flag: bool = False, search_file: str = None) -> None:
                     title="Now Playing",
                     message=file_name[:75],
                     app_icon=os.path.join(
-                        os.path.dirname(os.path.abspath(__file__)), "resurrection.ico"
+                        os.path.dirname(os.path.abspath(__file__)), '..', 'static', "resurrection.ico"
                     ),
                 )
         except Exception:
@@ -838,7 +855,6 @@ def changeDirectoryBoxHeight() -> None:
         refresh_btn.place(rely=0.43)
 
 
-# data file path modify here
 def readData() -> None:
     global Directory, drop_down, number_of_files, on_close, date_modified_list, dir_musics, alphabetical_list
     try:
@@ -846,6 +862,7 @@ def readData() -> None:
             loaded_data = json.load(f)
             number_of_files = loaded_data["number_of_files"]
             if number_of_files > 0:
+                Directory = loaded_data["Directory"]
                 dir_musics = loaded_data["full_paths"]
                 play_thread = threading.Thread(target=threadAction)
                 play_thread.daemon = True
@@ -856,13 +873,13 @@ def readData() -> None:
                     file_name = os.path.basename(path)
                     alphabetical_list.append(f"{file_name}#|#{path}")
                 date_modified_list = loaded_data["date_modified_names"]
-                Directory = loaded_data["Directory"]
                 rememberPathBtnAction()
                 directory_box.config(state=NORMAL)
                 directory_box.insert(END, Directory)
                 directory_box.config(state=DISABLED)
                 changeDirectoryBoxHeight()
                 drop_down["values"] = tuple(alphabetical_list)
+                refreshBtnAction(Directory)
             else:
                 root.deiconify()
                 root.lift()
@@ -883,7 +900,6 @@ def muteBtnAction(event: object = None) -> None:
     ) == "Theme: Dark" else play_pause_btn.configure(image=play_image_inv)
 
 
-# Volume button action
 def on_volume_change(event: object) -> None:
     player.volume = (100 - event.y) / 100
     volume_bar.set((event.y / volume_bar.winfo_height()) * 100)
@@ -892,7 +908,6 @@ def on_volume_change(event: object) -> None:
         muteBtnAction()
 
 
-# Seekbar update
 def seek_tap(event: object) -> None:
     if music_bar.state() and music_bar.state()[0] == "disabled":
         return
@@ -907,7 +922,6 @@ def seek_tap(event: object) -> None:
     player.play()
 
 
-# key press
 def on_key_press(event: object) -> None:
     if event.keysym == "XF86AudioPlay":
         playBtnAction()
@@ -946,7 +960,6 @@ def on_key_press(event: object) -> None:
             forwardBtnAction()
 
 
-# Update seekbar
 def update_seekbar() -> None:
     global on_close, file_name
     if on_close:
@@ -1034,8 +1047,8 @@ def on_entry_click(event: object = None) -> None:
         search_box.configure(foreground="White") if theme_btn.cget(
             "text"
         ) == "Theme: Dark" else search_box.configure(
-            foreground="#16161d"
-        )  # Set the text color to black
+            foreground="#16161d" # Dark gray
+        )
 
 
 def on_entry_leave(event=None):
@@ -1141,7 +1154,7 @@ def showRoot(icon: pystray.Icon = None, item: pystray.MenuItem = None) -> None:
 
 tray_icon = pystray.Icon(
     icon=PIL.Image.open(
-        os.path.join(os.path.dirname(os.path.abspath(__file__)), "resurrection.ico")
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'static', "resurrection.ico")
     ),
     name="True Music",
     title="True Music",
@@ -1222,6 +1235,10 @@ def onClosing() -> None:
         os.kill(os.getpid(), 9)
 
 
+read_data_thread = threading.Thread(target=readData)
+read_data_thread.daemon = True
+read_data_thread.start()
+
 if __name__ == "__main__":
     root = Tk()
     root.minsize(200, 50)
@@ -1234,14 +1251,14 @@ if __name__ == "__main__":
         if is_windows:
             root.iconbitmap(
                 os.path.join(
-                    os.path.dirname(os.path.abspath(__file__)), "resurrection.ico"
+                    os.path.dirname(os.path.abspath(__file__)), '..', 'static', "resurrection.ico"
                 )
             )
         else:
             root.iconbitmap(
                 "@"
                 + os.path.join(
-                    os.path.dirname(os.path.abspath(__file__)), "trueShuffle.xbm"
+                    os.path.dirname(os.path.abspath(__file__)), '..', 'static', "trueShuffle.xbm"
                 )
             )
     except:
@@ -1396,10 +1413,6 @@ if __name__ == "__main__":
     music_bar.place(relx=0.5, rely=0.2, anchor=CENTER, relwidth=0.33)
     music_bar.state(["disabled"])
 
-    read_data_thread = threading.Thread(target=readData)
-    read_data_thread.daemon = True
-    read_data_thread.start()
-
     selectDirectory = Button(
         root,
         text="Select Music Folder",
@@ -1460,11 +1473,11 @@ if __name__ == "__main__":
     volume_bar.place(relx=0.85, rely=0.19, anchor=W, relheight=0.25)
 
     volume_image = PhotoImage(
-        file=os.path.join(os.path.dirname(os.path.abspath(__file__)), "volume.png")
+        file=os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'static', "volume.png")
     )
     volume_image_inv = PhotoImage(
         file=os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), "volume_inverted.png"
+            os.path.dirname(os.path.abspath(__file__)), '..', 'static', "volume_inverted.png"
         )
     )
 
@@ -1551,22 +1564,22 @@ if __name__ == "__main__":
     hotkey_btn.place(anchor=W, relx=0.15, rely=0.1, relheight=0.11, relwidth=0.11)
 
     play_image = PhotoImage(
-        file=os.path.join(os.path.dirname(os.path.abspath(__file__)), "play.png")
+        file=os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'static', "play.png")
     )
 
     play_image_inv = PhotoImage(
         file=os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), "play_inverted.png"
+            os.path.dirname(os.path.abspath(__file__)), '..', 'static', "play_inverted.png"
         )
     )
 
     pause_image = PhotoImage(
-        file=os.path.join(os.path.dirname(os.path.abspath(__file__)), "pause.png")
+        file=os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'static', "pause.png")
     )
 
     pause_image_inv = PhotoImage(
         file=os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), "pause_inverted.png"
+            os.path.dirname(os.path.abspath(__file__)), '..', 'static', "pause_inverted.png"
         )
     )
 
@@ -1577,12 +1590,12 @@ if __name__ == "__main__":
     play_pause_btn.place(relx=0.15, rely=0.2, anchor=CENTER)
 
     forward_image = PhotoImage(
-        file=os.path.join(os.path.dirname(os.path.abspath(__file__)), "forward.png")
+        file=os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'static', "forward.png")
     )
 
     forward_image_inv = PhotoImage(
         file=os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), "forward_inverted.png"
+            os.path.dirname(os.path.abspath(__file__)), '..', 'static', "forward_inverted.png"
         )
     )
 
@@ -1593,12 +1606,12 @@ if __name__ == "__main__":
     forward_btn.place(relx=0.25, rely=0.2, anchor=CENTER)
 
     previous_image = PhotoImage(
-        file=os.path.join(os.path.dirname(os.path.abspath(__file__)), "previous.png")
+        file=os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'static', "previous.png")
     )
 
     previous_image_inv = PhotoImage(
         file=os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), "previous_inverted.png"
+            os.path.dirname(os.path.abspath(__file__)), '..', 'static', "previous_inverted.png"
         )
     )
 
