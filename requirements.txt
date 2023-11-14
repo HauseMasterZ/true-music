@@ -1,3 +1,5 @@
-pyglet==2.0.8
-pynput==1.7.6
-pystray==0.19.4
+pyglet
+pynput
+pystray
+plyer
+win10toast

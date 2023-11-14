@@ -42,6 +42,8 @@ import pystray
 from pynput import keyboard
 
 is_windows = os.name == "nt"
+
+
 class CreateToolTip(object):
     """
     create a tooltip for a given widget
@@ -310,6 +312,7 @@ played = set()
 
 if is_windows:
     from win10toast import ToastNotifier
+
     toaster = ToastNotifier()
 else:
     from plyer import notification
@@ -704,7 +707,7 @@ def playBtnAction(event: object = None) -> None:
         play_pause_btn.configure(image=pause_image) if theme_btn.cget(
             "text"
         ) == "Theme: Dark" else play_pause_btn.configure(image=pause_image_inv)
-    tray_icon.title = ("[Playing] " if player.playing else "[Paused] ") + file_name[:75]
+    tray_icon.title = ("[Playing] " if player.playing else "[Paused] ") + file_name[:60]
     tray_icon.menu = pystray.Menu(*menu_items)
 
 
@@ -780,20 +783,26 @@ def threadAction(prev_flag: bool = False, search_file: str = None) -> None:
             if is_windows:
                 toaster.show_toast(
                     title="Now Playing",
-                    msg=file_name[:75],
+                    msg=file_name[:60],
                     duration=3,
                     threaded=True,
                     icon_path=os.path.join(
-                        os.path.dirname(os.path.abspath(__file__)), '..', 'static', "resurrection.ico"
+                        os.path.dirname(os.path.abspath(__file__)),
+                        "..",
+                        "static",
+                        "resurrection.ico",
                     ),
                 )
             else:
                 # For some dumb reason pyler's notify method is messing with system tray icon and creating ghost icons every time a new notifcation appears
                 notification.notify(
                     title="Now Playing",
-                    message=file_name[:75],
+                    message=file_name[:60],
                     app_icon=os.path.join(
-                        os.path.dirname(os.path.abspath(__file__)), '..', 'static', "resurrection.ico"
+                        os.path.dirname(os.path.abspath(__file__)),
+                        "..",
+                        "static",
+                        "resurrection.ico",
                     ),
                 )
         except Exception:
@@ -804,12 +813,12 @@ def threadAction(prev_flag: bool = False, search_file: str = None) -> None:
         "text"
     ) == "Theme: Dark" else play_pause_btn.configure(image=pause_image_inv)
     track_length = int(player.source.duration)
-    now_playing.configure(text=f"Now playing: {file_name[:75]}")
+    now_playing.configure(text=f"Now playing: {file_name[:60]}")
     try:
         player.seek(0.0)
         player.play()
         tray_icon.title = ("[Playing] " if player.playing else "[Paused] ") + file_name[
-            :75
+            :60
         ]
     except:
         pass
@@ -1047,7 +1056,7 @@ def on_entry_click(event: object = None) -> None:
         search_box.configure(foreground="White") if theme_btn.cget(
             "text"
         ) == "Theme: Dark" else search_box.configure(
-            foreground="#16161d" # Dark gray
+            foreground="#16161d"  # Dark gray
         )
 
 
@@ -1154,7 +1163,12 @@ def showRoot(icon: pystray.Icon = None, item: pystray.MenuItem = None) -> None:
 
 tray_icon = pystray.Icon(
     icon=PIL.Image.open(
-        os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'static', "resurrection.ico")
+        os.path.join(
+            os.path.dirname(os.path.abspath(__file__)),
+            "..",
+            "static",
+            "resurrection.ico",
+        )
     ),
     name="True Music",
     title="True Music",
@@ -1220,8 +1234,8 @@ store_path_thread = threading.Thread(target=storePath)
 
 
 def onClosing() -> None:
-    global on_close, Directory, tray_icon
     os.remove(os.path.join(os.path.dirname(os.path.abspath(__file__)), "window.lock"))
+    global on_close, Directory, tray_icon
     store_path_thread.start()
     try:
         Directory = root.call(directory_box, "get", "1.0", "end-1c")
@@ -1251,14 +1265,20 @@ if __name__ == "__main__":
         if is_windows:
             root.iconbitmap(
                 os.path.join(
-                    os.path.dirname(os.path.abspath(__file__)), '..', 'static', "resurrection.ico"
+                    os.path.dirname(os.path.abspath(__file__)),
+                    "..",
+                    "static",
+                    "resurrection.ico",
                 )
             )
         else:
             root.iconbitmap(
                 "@"
                 + os.path.join(
-                    os.path.dirname(os.path.abspath(__file__)), '..', 'static', "trueShuffle.xbm"
+                    os.path.dirname(os.path.abspath(__file__)),
+                    "..",
+                    "static",
+                    "trueShuffle.xbm",
                 )
             )
     except:
@@ -1339,7 +1359,7 @@ if __name__ == "__main__":
     )  # noqa
 
     now_playing = Label(root, text="Now playing: ", font=("Corbel", 10))
-    now_playing.place(relx=0.5, rely=0.33, anchor=CENTER)
+    now_playing.place(relx=0.5, rely=0.35, anchor=CENTER)
     now_playing.configure(background="#121212", foreground="#f0f0f0")
 
     seek_of_music = Label(root, text="00:00", font=("Verdana", 8))
@@ -1473,11 +1493,16 @@ if __name__ == "__main__":
     volume_bar.place(relx=0.85, rely=0.19, anchor=W, relheight=0.25)
 
     volume_image = PhotoImage(
-        file=os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'static', "volume.png")
+        file=os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), "..", "static", "volume.png"
+        )
     )
     volume_image_inv = PhotoImage(
         file=os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), '..', 'static', "volume_inverted.png"
+            os.path.dirname(os.path.abspath(__file__)),
+            "..",
+            "static",
+            "volume_inverted.png",
         )
     )
 
@@ -1564,22 +1589,32 @@ if __name__ == "__main__":
     hotkey_btn.place(anchor=W, relx=0.15, rely=0.1, relheight=0.11, relwidth=0.11)
 
     play_image = PhotoImage(
-        file=os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'static', "play.png")
+        file=os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), "..", "static", "play.png"
+        )
     )
 
     play_image_inv = PhotoImage(
         file=os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), '..', 'static', "play_inverted.png"
+            os.path.dirname(os.path.abspath(__file__)),
+            "..",
+            "static",
+            "play_inverted.png",
         )
     )
 
     pause_image = PhotoImage(
-        file=os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'static', "pause.png")
+        file=os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), "..", "static", "pause.png"
+        )
     )
 
     pause_image_inv = PhotoImage(
         file=os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), '..', 'static', "pause_inverted.png"
+            os.path.dirname(os.path.abspath(__file__)),
+            "..",
+            "static",
+            "pause_inverted.png",
         )
     )
 
@@ -1590,12 +1625,17 @@ if __name__ == "__main__":
     play_pause_btn.place(relx=0.15, rely=0.2, anchor=CENTER)
 
     forward_image = PhotoImage(
-        file=os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'static', "forward.png")
+        file=os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), "..", "static", "forward.png"
+        )
     )
 
     forward_image_inv = PhotoImage(
         file=os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), '..', 'static', "forward_inverted.png"
+            os.path.dirname(os.path.abspath(__file__)),
+            "..",
+            "static",
+            "forward_inverted.png",
         )
     )
 
@@ -1606,12 +1646,17 @@ if __name__ == "__main__":
     forward_btn.place(relx=0.25, rely=0.2, anchor=CENTER)
 
     previous_image = PhotoImage(
-        file=os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'static', "previous.png")
+        file=os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), "..", "static", "previous.png"
+        )
     )
 
     previous_image_inv = PhotoImage(
         file=os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), '..', 'static', "previous_inverted.png"
+            os.path.dirname(os.path.abspath(__file__)),
+            "..",
+            "static",
+            "previous_inverted.png",
         )
     )
 
@@ -1652,7 +1697,7 @@ if __name__ == "__main__":
     root.bind("<KeyPress>", on_key_press)
     root.bind("<space>", playBtnAction)
     root.bind("<Configure>", updateSize)
-    root.protocol("WM_DELETE_WINDOW", onClosing)
+    root.protocol("WM_DELETE_WINDOW", root.iconify)
     root.bind("<Unmap>", onMinimize)
     root.bind("<Button-1>", set_focus)
     SystemTrayThread = threading.Thread(target=pystrayTray)
