@@ -40,9 +40,7 @@ import PIL.Image
 import pyglet
 import pystray
 from pynput import keyboard
-
 is_windows = os.name == "nt"
-
 
 class CreateToolTip(object):
     """
@@ -317,7 +315,6 @@ if is_windows:
 else:
     from plyer import notification
 
-
 def secure_generator(prev_flag: bool = False, search_file: str = None) -> str:
     """
     Generates a secure random number to select a music file.
@@ -393,6 +390,10 @@ def secure_generator(prev_flag: bool = False, search_file: str = None) -> str:
 
 
 def autoPlay() -> None:
+    """
+    Toggles the auto-play feature on and off. If auto-play is turned on, the function will also check if repeat is on and
+    call the autoRepeat function. The function updates the tray icon menu and the autoplay button text accordingly.
+    """
     global auto_play_flag, repeat_flag
     root.focus()
     autoplay_index = menu_items.index(
@@ -412,6 +413,11 @@ def autoPlay() -> None:
 
 
 def alwaysOnTop() -> None:
+    """
+    Toggles the "always on top" flag for the root window. If the flag is currently
+    set, it will be unset, and vice versa. Updates the text and relief of the
+    "always on top" button accordingly.
+    """
     global always_on_top_flag
     root.focus()
     if always_on_top_flag:
@@ -425,6 +431,11 @@ def alwaysOnTop() -> None:
 
 
 def trueShuffle() -> None:
+    """
+    Toggles the true shuffle feature on or off. If true shuffle is turned on, the menu item and button text will be updated
+    to reflect this. If the date modified flag is set, the date modified button action will be called. The tray icon menu
+    will also be updated to reflect the new state of the true shuffle feature.
+    """
     global shuffle_flag, date_modified_flag
     root.focus()
     shuffle_index = menu_items.index(
@@ -450,6 +461,11 @@ def trueShuffle() -> None:
 
 
 def autoRepeat() -> None:
+    """
+    Toggles the repeat flag and updates the UI accordingly. If auto play is enabled, calls autoPlay().
+
+    :return: None
+    """
     global repeat_flag, auto_play_flag
     root.focus()
     repeat_index = menu_items.index(
